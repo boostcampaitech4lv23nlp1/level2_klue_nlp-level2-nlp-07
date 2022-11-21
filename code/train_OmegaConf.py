@@ -16,7 +16,6 @@ from utils import *
 import random
 
 
-
 def main(cfg):
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -32,28 +31,39 @@ def main(cfg):
     model.to(device)
 
     ########### load dataset   ###########
-    train_dataset = load_data("../dataset/train/train.csv")
+    train_dataset = load_data(f'{cfg.path.train_path}/train.csv')
     train_label = label_to_num(train_dataset['label'].values)
     
-    train_x, dev_x, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2,                                                                         random_state=cfg.train.seed, stratify=train_label)
+    # Unzip_entity : subj/obj의 word, start_idx, end_idx, type 불러와서 완성된 데이터셋으로 만들기
+    train_unzip = unzip_entity(train_dataset)
+
+    # Column Selection, cols 내용을 바꿔서 원하는 columns만 뽑을 수 있다
+    cols = ['id','sentence','subject_word','object_word','label']
+    train_dataset = column_selection(train_unzip,cols)
+
+    # train_dev split, stratify 옵션으로 데이터 불균형 해결!
+    train_x, dev_x, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2, random_state=cfg.train.seed, stratify=train_label)
     train_x.reset_index(drop=True,inplace = True)
     dev_x.reset_index(drop=True,inplace = True)
     # dev_dataset = load_data("../dataset/train/dev.csv") # validation용 데이터는 따로 만드셔야 합니다.
 
-
+    # tokenizer에 넣을 sentence1, sentence2 생성, 복수의 cols 선택 가능, join으로 한 문장 만듦
+    sentence1_cols = ['subject_word']
+    sentence2_cols = ['object_word']
+    train_sentence1, train_sentence2 = make_sentence(train_x,sentence1_cols,sentence2_cols)
+    dev_sentence1, dev_sentence2 = make_sentence(dev_x,sentence1_cols,sentence2_cols)
 
     # tokenizing dataset
-#     tokenized_train = tokenized_dataset(train_x,train_label, tokenizer)
-#     tokenized_dev = tokenized_dataset(dev_x,dev_label, tokenizer)
+    # 맨 앞 argument True => 단일 문장 분류 / False => 두 문장 관계 분류
+    tokenized_train = tokenized_dataset(True, train_sentence1, train_sentence2, tokenizer)
+    tokenized_dev = tokenized_dataset(True, dev_sentence1, dev_sentence2, tokenizer)
     
     # tokenized_train, tokenized_dev, train_label, dev_label = train_test_split(tokenized_train, train_label, test_size=0.2, random_state=cfg.train.seed, stratify=train_label)
     
-    
     # make dataset for pytorch.
-    RE_train_dataset = RE_Dataset(train_x,train_label, tokenizer)
-    RE_dev_dataset = RE_Dataset(dev_x,dev_label, tokenizer)
+    RE_train_dataset = RE_Dataset(tokenized_train,train_label)
+    RE_dev_dataset = RE_Dataset(tokenized_dev,dev_label)
 
-    
     
     training_args = TrainingArguments(
         output_dir=cfg.path.checkpoint,
@@ -88,7 +98,7 @@ def main(cfg):
     # train model
     trainer.train()
     model.save_pretrained(f'{cfg.path.best_model}/{cfg.model.saved_name}')
-    
+
 
 # set fixed random seed
 def seed_everything(seed):
@@ -108,6 +118,6 @@ if __name__ == '__main__':
     wandb.login()
     cfg = OmegaConf.load(f'./config/{args.config}.yaml')
     seed_everything(cfg.train.seed)
-    wandb.init(project="RE_boostcamp", entity="roy_1201",name = cfg.model.exp_name)
+    wandb.init(project="robertaS_single", entity="klue_level2",name = cfg.model.exp_name)
     main(cfg)
     wandb.finish()

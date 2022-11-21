@@ -1,0 +1,25 @@
+path:
+    train_path: /opt/ml/dataset/train
+    test_path: /opt/ml/dataset/test
+    best_model : ./best_model
+    checkpoint : ./results
+
+data:
+    shuffle: True
+    augmentation: # adea, bt 등등
+    
+model:
+    model_name: klue/roberta-small
+    saved_name: base-line
+    exp_name : singleSentence
+
+train:
+    seed: 42
+    batch_size: 32
+    epoch: 10
+    lr : 5e-5
+    logging_step: 1000
+    # patience : 10
+
+test:
+    save_name : robertaS_single
