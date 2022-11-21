@@ -1,6 +1,6 @@
 path:
     train_path: ../dataset/train
-    test_path: ../dataset/test/test_data
+    test_path: ../dataset/test
     best_model : ./best_model
     checkpoint : ./results
 
@@ -9,17 +9,17 @@ data:
     augmentation: # adea, bt 등등
     
 model:
-    model_name: klue/roberta-large
-    saved_name: roberta_large_fix_text_lr7_6_split_staritify
-    exp_name : roberta-large fix_text lr7e-6 split_staritify
+    model_name: klue/bert-base
+    saved_name: base-line
+    exp_name : devSplit
 
 train:
     seed: 42
-    batch_size: 32
-    epoch: 30
-    lr : 3e-6
-    logging_step: 1000
-    patience : 10
+    batch_size: 16
+    epoch: 10
+    lr : 5e-5
+    eval_step: 500
+    # patience : 10
 
 test:
-    save_name : submission_roberta_large_fix_text_lr7_6_split_staritify
+    save_name : bert-base/devSplit

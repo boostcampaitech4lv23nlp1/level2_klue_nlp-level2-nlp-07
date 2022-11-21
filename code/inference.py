@@ -19,7 +19,7 @@ def inference(model, tokenized_sent, device):
     test dataset을 DataLoader로 만들어 준 후,
     batch_size로 나눠 model이 예측 합니다.
     """
-    dataloader = DataLoader(tokenized_sent, batch_size=32, shuffle=False) # batch_size= 16
+    dataloader = DataLoader(tokenized_sent, batch_size=16, shuffle=False) # batch_size= 16
     model.eval()
     output_pred = []
     output_prob = []
@@ -59,8 +59,16 @@ def load_test_dataset(dataset_dir, tokenizer):
     """
     test_dataset = load_data(dataset_dir)
     test_label = list(map(int,test_dataset['label'].values))
+
+    test_unzip = unzip_entity(test_dataset)
+
+    sentence1_cols = ['subject_word']
+    sentence2_cols = ['object_word']
+
+    test_sentence1, test_sentence2 = make_sentence(test_unzip,sentence1_cols,sentence2_cols)
+
     # tokenizing dataset
-    tokenized_test = tokenized_dataset(test_dataset, tokenizer)
+    tokenized_test = tokenized_dataset(test_sentence1,test_sentence2, tokenizer)
     return test_dataset['id'], tokenized_test, test_label
 
 def main(cfg):
@@ -81,13 +89,12 @@ def main(cfg):
 
     ## load test datset
     # test_dataset_dir = "../dataset/test/test_data.csv"
-    # test_dataset_dir = f'{cfg.path.test_path}.csv'
-    test_dataset = load_data("../dataset/test/test_data.csv")
-    test_id = test_dataset['id'].values
-    test_label = []
-    # test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir, tokenizer)
-    Re_test_dataset = RE_Dataset(test_dataset ,test_label,tokenizer)
-    Re_test_dataset
+    test_dataset_dir = f'{cfg.path.test_path}/test_data.csv'
+    # test_dataset = load_data("../dataset/test/test_data.csv")
+    # test_id = test_dataset['id'].values
+    # test_label = []
+    test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir, tokenizer)
+    Re_test_dataset = RE_Dataset(test_dataset ,test_label)
     ## predict answer
     pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
     pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
