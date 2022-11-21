@@ -131,32 +131,30 @@ def change_sentence(dataset,subject_word_list,obejct_word_list):
         'label':label,})
     return out_dataset
 
-# def preprocessing_dataset(dataset):
-#     """ 처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
-#     subject_entity = []
-#     object_entity = []
-#     for i,j in zip(dataset['subject_entity'], dataset['object_entity']):
-#         i = i[1:-1].split(',')[0].split(':')[1] # text만 추출한다 이 말씀
-#         j = j[1:-1].split(',')[0].split(':')[1] # 
-
-#         subject_entity.append(i)
-#         object_entity.append(j)
-#     out_dataset = pd.DataFrame({'id':dataset['id'], 'sentence':dataset['sentence'],'subject_entity':subject_entity,'object_entity':object_entity,'label':dataset['label'],})
-#     return out_dataset
 
 def load_data(dataset_dir):
     """ csv 파일을 경로에 맡게 불러 옵니다. """
     pd_dataset = pd.read_csv(dataset_dir)
     return pd_dataset
 
-def tokenized_dataset(sentence1, sentence2, tokenizer):
-    tokenized_sentences = tokenizer(
-          sentence1,
-          sentence2,
-          return_tensors="pt",
-          padding=True,
-          truncation=True,
-          max_length=256,
-          add_special_tokens=True,
-      )
+def tokenized_dataset(one_sentence,sentence1, sentence2, tokenizer):
+    if one_sentence:
+        tokenized_sentences = tokenizer(
+            sentence1 + ' [SEP] '  + sentence2,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=256,
+            add_special_tokens=True,
+        )
+    else:
+        tokenized_sentences = tokenizer(
+            sentence1,
+            sentence2,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=256,
+            add_special_tokens=True,
+        )
     return tokenized_sentences

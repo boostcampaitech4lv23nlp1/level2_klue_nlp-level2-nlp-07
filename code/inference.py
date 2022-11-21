@@ -45,7 +45,7 @@ def num_to_label(label):
     숫자로 되어 있던 class를 원본 문자열 라벨로 변환 합니다.
     """
     origin_label = []
-    with open('dict_num_to_label.pkl', 'rb') as f:
+    with open('/opt/ml/code/dict_num_to_label.pkl', 'rb') as f:
         dict_num_to_label = pickle.load(f)
     for v in label:
         origin_label.append(dict_num_to_label[v])
@@ -68,7 +68,7 @@ def load_test_dataset(dataset_dir, tokenizer):
     test_sentence1, test_sentence2 = make_sentence(test_unzip,sentence1_cols,sentence2_cols)
 
     # tokenizing dataset
-    tokenized_test = tokenized_dataset(test_sentence1,test_sentence2, tokenizer)
+    tokenized_test = tokenized_dataset(True, test_sentence1,test_sentence2, tokenizer)
     return test_dataset['id'], tokenized_test, test_label
 
 def main(cfg):
@@ -104,7 +104,7 @@ def main(cfg):
     # 아래 directory와 columns의 형태는 지켜주시기 바랍니다.
     output = pd.DataFrame({'id':test_id,'pred_label':pred_answer,'probs':output_prob,})
 
-    output.to_csv(f'./prediction/{cfg.test.save_name}.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    output.to_csv(f'/opt/ml/code/prediction/{cfg.test.save_name}.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
     print('---- Finish! ----')
 if __name__ == '__main__':
