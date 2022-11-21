@@ -139,8 +139,9 @@ def load_data(dataset_dir):
 
 def tokenized_dataset(one_sentence,sentence1, sentence2, tokenizer):
     if one_sentence:
+        sentence = [s1 + ' [SEP] ' + s2 for s1, s2 in zip(sentence1,sentence2)]
         tokenized_sentences = tokenizer(
-            sentence1 + ' [SEP] '  + sentence2,
+            sentence,
             return_tensors="pt",
             padding=True,
             truncation=True,
