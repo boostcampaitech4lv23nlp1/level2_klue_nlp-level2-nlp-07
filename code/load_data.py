@@ -82,8 +82,19 @@ def column_selection(dataset, columns):
   out_columns = dataset.loc[:,columns]
   return out_columns
 
+# special token을 포함한 단일 문장 분류 sentence 만들기 위한 전초 작업, 이후 change sentence로 원 문장 변경
+def make_sentence1(dataset):
+    subject_entity = []
+    object_entity = [] 
+    for i in range(len(dataset)):
+        e01 = ''.join(['<subj>',dataset.loc[i]['subject_word'],'</subj>'])
+        e02 = ''.join(['<obj>',dataset.loc[i]['object_word'],'</obj>'])
+        subject_entity.append(e01)
+        object_entity.append(e02)
+    return subject_entity, object_entity
+
 # token1 column, token2 column을 받아서 여러개의 column을 사용해 sentence1을 만들수 있게 customize
-def make_sentence(dataset,token1_column,token2_column):
+def make_sentence2(dataset,token1_column,token2_column):
     concat_entity = []
     for i in range(len(dataset)):
         temp = ''
@@ -92,6 +103,7 @@ def make_sentence(dataset,token1_column,token2_column):
         temp = e01 + ' [SEP] ' + e02
         concat_entity.append(temp)
     return concat_entity, list(dataset['sentence'])
+
 
 # subject word와 object word를 바꾸고 그 내용을 원 문장과 다른 column들에 반영할 수 있게 만든 method
 # 다만 동일 길이의 list를 넣어줘야 함.
@@ -137,25 +149,14 @@ def load_data(dataset_dir):
     pd_dataset = pd.read_csv(dataset_dir)
     return pd_dataset
 
-def tokenized_dataset(one_sentence,sentence1, sentence2, tokenizer):
-    if one_sentence:
-        sentence = [s1 + ' [SEP] ' + s2 for s1, s2 in zip(sentence1,sentence2)]
-        tokenized_sentences = tokenizer(
-            sentence,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=256,
-            add_special_tokens=True,
-        )
-    else:
-        tokenized_sentences = tokenizer(
-            sentence1,
-            sentence2,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=256,
-            add_special_tokens=True,
-        )
+
+def tokenized_dataset(sentence, tokenizer):
+    tokenized_sentences = tokenizer(
+        sentence,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=256,
+        add_special_tokens=True,
+    )
     return tokenized_sentences

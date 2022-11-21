@@ -38,26 +38,39 @@ def main(cfg):
     train_unzip = unzip_entity(train_dataset)
 
     # Column Selection, cols 내용을 바꿔서 원하는 columns만 뽑을 수 있다
-    cols = ['id','sentence','subject_word','object_word','label']
-    train_dataset = column_selection(train_unzip,cols)
+    # cols = ['id','sentence','subject_word','object_word','label']
+    # train_dataset = column_selection(train_unzip,cols)
 
     # train_dev split, stratify 옵션으로 데이터 불균형 해결!
-    train_x, dev_x, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2, random_state=cfg.train.seed, stratify=train_label)
+    train_x, dev_x, train_label, dev_label = train_test_split(train_unzip, train_label, test_size=0.2, random_state=cfg.train.seed, stratify=train_label)
     train_x.reset_index(drop=True,inplace = True)
     dev_x.reset_index(drop=True,inplace = True)
     # dev_dataset = load_data("../dataset/train/dev.csv") # validation용 데이터는 따로 만드셔야 합니다.
 
+    # add special tokens
+    special_tokens_dict = {'additional_special_tokens': ['<subj>','</subj>','<obj>','</obj>']}
+    num_added_tokens = tokenizer.add_special_tokens(special_tokens_dict)
+    model.resize_token_embeddings(len(tokenizer))
+
     # tokenizer에 넣을 sentence1, sentence2 생성, 복수의 cols 선택 가능, join으로 한 문장 만듦
-    sentence1_cols = ['subject_word']
-    sentence2_cols = ['object_word']
-    train_sentence1, train_sentence2 = make_sentence(train_x,sentence1_cols,sentence2_cols)
-    dev_sentence1, dev_sentence2 = make_sentence(dev_x,sentence1_cols,sentence2_cols)
+    # 두 문장 관계
+    # sentence1_cols = ['subject_word']
+    # sentence2_cols = ['object_word']
+    # train_sentence1, train_sentence2 = make_sentence2(train_x,sentence1_cols,sentence2_cols)
+    # dev_sentence1, dev_sentence2 = make_sentence2(dev_x,sentence1_cols,sentence2_cols)
 
     # tokenizing dataset
-    # 맨 앞 argument True => 단일 문장 분류 / False => 두 문장 관계 분류
-    tokenized_train = tokenized_dataset(True, train_sentence1, train_sentence2, tokenizer)
-    tokenized_dev = tokenized_dataset(True, dev_sentence1, dev_sentence2, tokenizer)
+    # 두 문장 관계
+    # tokenized_train = tokenized_dataset(train_sentence1, train_sentence2, tokenizer)
+    # tokenized_dev = tokenized_dataset(dev_sentence1, dev_sentence2, tokenizer)
     
+    # 단일 문장 분류 base line <subj> <obj>
+    train_subj_list, train_obj_list = make_sentence1(train_x)
+    dev_subj_list, dev_obj_list = make_sentence1(dev_x)
+
+    tokenized_train = tokenized_dataset(list(change_sentence(train_x,train_subj_list,train_obj_list)['sentence']),tokenizer)
+    tokenized_dev = tokenized_dataset(list(change_sentence(dev_x,dev_subj_list,dev_obj_list)['sentence']),tokenizer)
+
     # tokenized_train, tokenized_dev, train_label, dev_label = train_test_split(tokenized_train, train_label, test_size=0.2, random_state=cfg.train.seed, stratify=train_label)
     
     # make dataset for pytorch.
@@ -118,6 +131,6 @@ if __name__ == '__main__':
     wandb.login()
     cfg = OmegaConf.load(f'./config/{args.config}.yaml')
     seed_everything(cfg.train.seed)
-    wandb.init(project="robertaS_single", entity="klue_level2",name = cfg.model.exp_name)
+    wandb.init(project="robS_single-base", entity="klue_level2",name = cfg.model.exp_name)
     main(cfg)
     wandb.finish()

@@ -10,8 +10,8 @@ data:
     
 model:
     model_name: klue/roberta-small
-    saved_name: base-line
-    exp_name : singleSentence
+    saved_name: single-line
+    exp_name : singleSentenceBase
 
 train:
     seed: 42
@@ -22,4 +22,4 @@ train:
     # patience : 10
 
 test:
-    save_name : robertaS_single
+    save_name : robS_single-base

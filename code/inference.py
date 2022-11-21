@@ -62,13 +62,17 @@ def load_test_dataset(dataset_dir, tokenizer):
 
     test_unzip = unzip_entity(test_dataset)
 
-    sentence1_cols = ['subject_word']
-    sentence2_cols = ['object_word']
+    # sentence1_cols = ['subject_word']
+    # sentence2_cols = ['object_word']
 
-    test_sentence1, test_sentence2 = make_sentence(test_unzip,sentence1_cols,sentence2_cols)
-
+    # test_sentence1, test_sentence2 = make_sentence2(test_unzip,sentence1_cols,sentence2_cols)
+    
     # tokenizing dataset
-    tokenized_test = tokenized_dataset(True, test_sentence1,test_sentence2, tokenizer)
+    # tokenized_test = tokenized_dataset(True, test_sentence1,test_sentence2, tokenizer)
+
+    test_subj_list, test_obj_list = make_sentence1(test_unzip)
+    tokenized_test = tokenized_dataset(list(change_sentence(test_unzip,test_subj_list,test_obj_list)['sentence']),tokenizer)
+
     return test_dataset['id'], tokenized_test, test_label
 
 def main(cfg):
@@ -93,8 +97,15 @@ def main(cfg):
     # test_dataset = load_data("../dataset/test/test_data.csv")
     # test_id = test_dataset['id'].values
     # test_label = []
+    
+    # add special tokens
+    special_tokens_dict = {'additional_special_tokens': ['<subj>','</subj>','<obj>','</obj>']}
+    num_added_tokens = tokenizer.add_special_tokens(special_tokens_dict)
+    model.resize_token_embeddings(len(tokenizer))
+
     test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir, tokenizer)
     Re_test_dataset = RE_Dataset(test_dataset ,test_label)
+    
     ## predict answer
     pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
     pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
