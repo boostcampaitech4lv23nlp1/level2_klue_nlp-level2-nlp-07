@@ -9,7 +9,7 @@ from omegaconf import OmegaConf
 from load_data import *
 from utils import *
 import random
-
+from collections import Counter
 
 def train(cfg):
     ## Device
@@ -37,6 +37,10 @@ def train(cfg):
     RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer)
     RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer)
 
+    ## make samples_per_class (which is needed for TrainerwithLosstuning)
+    train_label_counter = Counter(train_label)
+    samples_per_class = [train_label_counter[i] for i in range(model_config.num_labels)] ## [7765, 1023, 339, ....]
+
     ## train arguments
     training_args = TrainingArguments(
         output_dir=cfg.train.checkpoint,
@@ -44,8 +48,8 @@ def train(cfg):
         save_steps=cfg.train.logging_step,
         num_train_epochs=cfg.train.epoch,
         learning_rate= cfg.train.lr,                         # default : 5e-5
-        per_device_train_batch_size=cfg.train.batch_size,    # default : 16
-        per_device_eval_batch_size=cfg.train.batch_size,     # default : 16
+        per_device_train_batch_size=cfg.train.batch_size,    # default : 32
+        per_device_eval_batch_size=cfg.train.batch_size,     # default : 32
         warmup_steps=cfg.train.logging_step,               
         weight_decay=cfg.train.weight_decay,               
         logging_steps=100,               
@@ -57,8 +61,9 @@ def train(cfg):
         report_to="wandb",
         run_name= cfg.wandb.exp_name
         )
-    
-    trainer = TrainerwithFocalLoss(
+    ## setting custom trainer with default optimizer & scheduler : AdamW, LambdaLR
+    trainer = TrainerwithLosstuning(
+        samples_per_class=samples_per_class,
         model=model,                     # the instantiated 🤗 Transformers model to be trained
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset

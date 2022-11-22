@@ -7,6 +7,9 @@ import torch
 
 from transformers import Trainer
 
+from balanced_loss import Loss
+from omegaconf import OmegaConf
+
 def klue_re_micro_f1(preds, labels):
     """KLUE-RE micro f1 (except no_relation)"""
     label_list = ['no_relation', 'org:top_members/employees', 'org:members',
@@ -65,34 +68,42 @@ def label_to_num(label):
 
     return num_label
 
+class TrainerwithLosstuning(Trainer):
+    def __init__(
+        self,
+        samples_per_class = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.samples_per_class = samples_per_class
 
-
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2, logits=False, reduce=True):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.logits = logits
-        self.reduce = reduce
-
-    def forward(self, inputs, targets):
-        ce_loss = nn.CrossEntropyLoss()(inputs, targets, reduction='none')
-        pt = torch.exp(-ce_loss)
-        F_loss = self.alpha * (1-pt)**self.gamma * ce_loss
-
-        if self.reduce:
-            return torch.mean(F_loss)
-        else:
-            return F_loss
-
-class TrainerwithFocalLoss(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.get("labels")
         # forward pass
         outputs = model(**inputs)
         logits = outputs.get("logits")
         # compute custom loss (suppose one has 3 labels with different weights)
-        loss_fct = nn.CrossEntropyLoss()
+        cfg = OmegaConf.load(f'./config/config.yaml')
+        if cfg.train.loss == "focal_loss":
+            loss_fct = Loss(
+                loss_type=cfg.train.loss,
+                beta=cfg.train.beta,
+                fl_gamma=cfg.train.gamma,
+                samples_per_class=self.samples_per_class,
+                class_balanced=True,
+                )
+        elif cfg.train.loss == "cross_entropy":
+            loss_fct = Loss(
+                loss_type=cfg.train.loss,
+                )
+        elif cfg.train.loss == "class_balanced_cross_entropy":
+            loss_fct = Loss(
+                loss_type=cfg.train.loss,
+                samples_per_class=self.samples_per_class,
+                class_balanced=True,
+            )
+
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
