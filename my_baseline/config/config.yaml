@@ -1,0 +1,30 @@
+data:
+    train_data: /opt/ml/dataset/train/train.csv
+    test_data: /opt/ml/dataset/test/test_data.csv
+    shuffle: True
+    
+model:
+    model_name: klue/roberta-small
+    saved_model: /opt/ml/code/mine/save_model/klue/roberta-small
+    
+train:
+    train_mode: True
+    seed: 42
+    batch_size: 32
+    epoch: 1
+    lr: 5e-5
+    logging_step: 1000
+    weight_decay: 0.01
+    checkpoint : /opt/ml/code/mine/results
+    # patience : 10
+
+test:
+    test_mode: True
+    num_to_label: /opt/ml/code/dict_num_to_label.pkl
+    output_csv: /opt/ml/code/prediction/2_xlm-roberta-base.csv
+
+wandb:
+    project_name: testtest
+    entity: klue-bora
+    exp_name: testtest
+
