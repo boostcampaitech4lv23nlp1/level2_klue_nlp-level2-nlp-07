@@ -6,15 +6,20 @@ from tqdm import tqdm
 
 class RE_Dataset(torch.utils.data.Dataset):
     """ Dataset 구성을 위한 class."""
-    def __init__(self, dataset,labels,tokenizer):
+    def __init__(self, dataset,labels,tokenizer,marker_mode= 'TEM_prunct'):
         self.labels = labels
         self.tokenizer = tokenizer
+        self.new_tokens = []
+        if self.args.input_format == 'entity_marker':
+            self.new_tokens = ['<subj>', '</subj>', '<obj>', '</obj>']
+        self.tokenizer.add_tokens(self.new_tokens)
+        self.marker_mode = marker_mode
         self.dataset = self.tokenizing(dataset)
     def __getitem__(self, idx):
         if len(self.labels) ==0:
             return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
                     'attention_mask': torch.LongTensor(self.dataset[idx]['attention_mask']).squeeze(0),
-                    'token_type_ids': torch.LongTensor(self.dataset[idx]['token_type_ids']).squeeze(0)
+                    'token_type_ids': torch.LongTensor(self.dataset[idx]['token_type_ids']).squeeze(0)                    
                            }
         else:
             return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
@@ -39,8 +44,8 @@ class RE_Dataset(torch.utils.data.Dataset):
             data.append(outputs)
         return data
     
-    def add_special_enti(self,df,marker_mode= 'TEM_prunct'):
-        def change_enti(sub,obj,marker_mode = 'TEM_prunct'):
+    def add_special_enti(self,df,marker_mode= self.marker_mode):
+        def change_enti(sub,obj,marker_mode = self.marker_mode):
             if marker_mode == 'TEM_prunct':
                 marked_sub = ['@']+['*']+list(sub['type']) + ['*']+list(sub['word'])+['@']
                 marked_obj = ['#']+['^']+list(obj['type']) + ['^']+list(obj['word'])+['#']
@@ -72,6 +77,7 @@ class RE_Dataset(torch.utils.data.Dataset):
             marked += df['sentence'][s_e:]
             marked = ''.join(marked)
         return marked
+
     
 def load_data(dataset_dir):
     """ csv 파일을 경로에 맡게 불러 옵니다. """
