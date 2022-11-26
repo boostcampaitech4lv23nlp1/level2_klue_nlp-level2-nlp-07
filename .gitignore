@@ -21,3 +21,4 @@ prediction/
 .vscode-server/
 .wget-hsts
 notebooks/.ipynb_checkpoints/
+my_baseline/
