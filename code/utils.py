@@ -4,9 +4,7 @@ import numpy as np
 import pickle as pickle
 from torch import nn
 import torch
-
 from transformers import Trainer
-
 from balanced_loss import Loss
 from omegaconf import OmegaConf
 
@@ -93,10 +91,9 @@ class TrainerwithLosstuning(Trainer):
                 samples_per_class=self.samples_per_class,
                 class_balanced=True,
                 )
+            
         elif cfg.train.loss == "cross_entropy":
-            loss_fct = Loss(
-                loss_type=cfg.train.loss,
-                )
+            loss_fct = nn.CrossEntropyLoss()
         elif cfg.train.loss == "class_balanced_cross_entropy":
             loss_fct = Loss(
                 loss_type=cfg.train.loss,

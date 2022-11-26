@@ -1,22 +1,23 @@
 data:
   train_data: /opt/ml/dataset/train/train.csv
+  dev_data: /opt/ml/dataset/train/dev_data.csv
   test_data: /opt/ml/dataset/test/test_data.csv
   shuffle: True
 
 model:
   model_name: klue/roberta-small
-  saved_model: /opt/ml/code/mine/save_model/3_klue_roberta-small ## should be changed at every experiment
+  saved_model: /opt/ml/code/save_model/99_klue_roberta-small ## should be changed at every experiment
 
 train:
   train_mode: True
   seed: 42
   batch_size: 32
-  epoch: 1
+  epoch: 10
   lr: 5e-5
   logging_step: 1000
   weight_decay: 0.01
-  checkpoint: /opt/ml/code/mine/results
-  loss: "focal_loss" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
+  checkpoint: /opt/ml/code/results
+  loss: "cross_entropy" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
   beta: 0.99
   gamma: 2
   # patience : 10
@@ -24,9 +25,10 @@ train:
 test:
   test_mode: True
   num_to_label: /opt/ml/code/dict_num_to_label.pkl
-  output_csv: /opt/ml/code/prediction/3_klue_roberta_small.csv ## should be changed at every experiment
+  dev_csv : /opt/ml/code/prediction/dev/99_klue-roberta-small_dev.csv
+  output_csv: /opt/ml/code/prediction/test/99_klue-roberta-small.csv ## should be changed at every experiment
 
 wandb:
   project_name: testtest
   entity: klue-bora
-  exp_name: testtest_DM
+  exp_name: testtest

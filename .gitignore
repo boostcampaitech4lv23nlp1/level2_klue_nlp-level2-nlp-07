@@ -20,5 +20,5 @@ prediction/
 .viminfo
 .vscode-server/
 .wget-hsts
-notebooks/.ipynb_checkpoints/
 my_baseline/
+notebooks/.ipynb_checkpoints/
