@@ -1,12 +1,3 @@
-"""
-확인 사항
-1. saved_model 저장 경로
-2. checkpoint 저장 경로
-3. output 저장 이름
-4. Wandb project, exp 이름
-
-** 모델 이름, 파라미터 등도 다시 확인!!! **
-"""
 
 data:
   train_data: /opt/ml/dataset/train/train.csv
