@@ -72,8 +72,9 @@ def train(cfg):
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
-        compute_metrics=compute_metrics  # define metrics function
-        # callbacks = [EarlyStoppingCallback(early_stopping_patience=cfg.train.patience)]# total_step / eval_step : max_patience
+        compute_metrics=compute_metrics,  # define metrics function
+        callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
+                                    early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
     )
 
     ## train model

@@ -7,6 +7,8 @@ import torch
 from transformers import Trainer
 from balanced_loss import Loss
 from omegaconf import OmegaConf
+from transformers import EarlyStoppingCallback
+from typing import Dict, List, Optional, Union
 
 def klue_re_micro_f1(preds, labels):
     """KLUE-RE micro f1 (except no_relation)"""
@@ -104,3 +106,20 @@ class TrainerwithLosstuning(Trainer):
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
+class EarlyStoppingEval(EarlyStoppingCallback):
+    def on_evaluate(self, args, state, control, metrics, **kwargs):
+        metric_to_check = "eval_loss"
+        if not metric_to_check.startswith("eval_"):
+            metric_to_check = f"eval_{metric_to_check}"
+        metric_value = metrics.get(metric_to_check)
+
+        if metric_value is None:
+            logger.warning(
+                f"early stopping required metric_for_best_model, but did not find {metric_to_check} so early stopping"
+                " is disabled"
+            )
+            return
+
+        self.check_metric_value(args, state, control, metric_value)
+        if self.early_stopping_patience_counter >= self.early_stopping_patience:
+            control.should_training_stop = True

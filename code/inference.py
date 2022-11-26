@@ -116,9 +116,9 @@ def test(cfg):
     ## load Model & Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
     # if best model
-    # model = AutoModelForSequenceClassification.from_pretrained(cfg.model.saved_model)
+    model = AutoModelForSequenceClassification.from_pretrained(cfg.model.saved_model)
     # elif checkpoint
-    model = AutoModelForSequenceClassification.from_pretrained(cfg.test.load_cp)
+    # model = AutoModelForSequenceClassification.from_pretrained(cfg.test.load_cp)
     model.parameters
     model.to(device)
 
