@@ -108,6 +108,7 @@ class TrainerwithLosstuning(Trainer):
 
 class EarlyStoppingEval(EarlyStoppingCallback):
     def on_evaluate(self, args, state, control, metrics, **kwargs):
+        # metric_to_check = args.metric_for_best_model
         metric_to_check = "eval_loss"
         if not metric_to_check.startswith("eval_"):
             metric_to_check = f"eval_{metric_to_check}"
