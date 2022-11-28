@@ -33,6 +33,10 @@ def train(cfg):
     train_data.reset_index(drop=True, inplace = True)
     dev_data.reset_index(drop=True, inplace = True)
 
+    # dev data to csv for gold label save
+    dev_data['label'] = dev_label
+    dev_data.to_csv(cfg.data.dev_data, index=False)
+
     ## make dataset for pytorch
     RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer, cfg)
     RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer, cfg)
@@ -75,8 +79,9 @@ def train(cfg):
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
-        compute_metrics=compute_metrics  # define metrics function
-        # callbacks = [EarlyStoppingCallback(early_stopping_patience=cfg.train.patience)]# total_step / eval_step : max_patience
+        compute_metrics=compute_metrics,  # define metrics function
+        callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
+                                    early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
     )
 
     ## train model
