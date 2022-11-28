@@ -16,7 +16,7 @@ binary_predictions = pd.read_csv(binary_path)
 
 # use predicted relation overwrite the original relation
 
-for type_id in range(0, 12):
+for type_id in range(0, 4):
     multi_path = '/opt/ml/code/prediction/recent/depot-recent-%d.csv' % (type_id)
     preds = pd.read_csv(multi_path)
     label_list = list(LABEL_TO_ID[type_id].keys())
@@ -27,54 +27,7 @@ for type_id in range(0, 12):
         zeros = np.zeros(30)
         for jdx, p in zip(label_idx, eval(r['probs'])):
             zeros[jdx] = p
-        binary_predictions.loc['id'==r['id'],'pred_label'] = r['pred_label'] 
-        binary_predictions.loc['id'==r['id'],'probs'] = str(zeros)
+        binary_predictions.loc[r['id'],'pred_label'] = r['pred_label'] 
+        binary_predictions.loc[r['id'],'probs'] = str(zeros)
 
 binary_predictions.to_csv('/opt/ml/code/prediction/recent/depot-recent-final.csv')
-
-
-
-
-
-            
-
-    
-
-
-    
-
-
-# Re-assign from the predicted relation 
-for k, v in binary_predictions.items():
-    if v != '':continue 
-    if k in semantic_preditions:
-        binary_predictions[k] = semantic_preditions[k]
-    else:
-        binary_predictions[k] = 'no_relation'
-
-
-predictions = []
-for i in range(0, len(binary_predictions)):
-    assert binary_predictions[i] != ''
-    predictions.append(binary_predictions[i])
-
-gold = []
-data = open(y['gold_file'], 'r')
-for d in data:
-    d = d.strip()
-    gold.append(d)
-
-if not os.path.exists('saved_models/depot-all-recent/'):
-    os.mkdir('saved_models/depot-all-recent/')
-
-out_file = 'saved_models/depot-all-recent/predictions.txt'
-out_f = open(out_file, 'w')
-for i, p in enumerate(predictions):
-    out_f.write('%d %s\n' % (i, p))
-
-p, r, f1 = scorer.score(gold, predictions, verbose=True)
-print("{} set evaluate result: {:.2f}\t{:.2f}\t{:.2f}".format('test',p,r,f1))
-
-
-print("Evaluation ended.")
-
