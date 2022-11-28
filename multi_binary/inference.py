@@ -34,16 +34,19 @@ def inference(model, tokenized_sent, device):
   
     return np.concatenate(output_pred).tolist(), np.concatenate(output_prob, axis=0).tolist()
 
-def num_to_label(label):
+def num_to_label(label,type_pair_id):
     """
     숫자로 되어 있던 class를 원본 문자열 라벨로 변환 합니다.
     """
     origin_label = []
-    with open('/opt/ml/code/dict_num_to_label.pkl', 'rb') as f:
-        dict_num_to_label = pickle.load(f)
+    if type_pair_id == None:
+        with open('/opt/ml/code/dict_num_to_label.pkl', 'rb') as f:
+            dict_num_to_label = pickle.load(f)
+    else:
+        label2id = LABEL_TO_ID[type_pair_id]
+        dict_num_to_label = {i:label for label, i in label2id.items()}
     for v in label:
         origin_label.append(dict_num_to_label[v])
-  
     return origin_label
 
 def load_test_dataset(dataset_dir,type_pair_id):

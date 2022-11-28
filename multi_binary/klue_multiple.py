@@ -35,10 +35,12 @@ def main(args):
     ########### load dataset   ###########
     train_dataset = load_data(args.train_data_dir)
     subj_type, obj_type = ID_TO_TYPE_PAIR[args.type_pair_id].split('_')
-    subj_data = train[train['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
-    obj_data = train[train['object_entity'].apply(lambda x: eval(x)['type']==obj_type)]
-    train_dataset = pd.merge(subj_data, obj_data, how='inner')
-    train_label = label_to_num(train_dataset['label'].values)
+    subj_data = train_dataset[train_dataset['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
+    obj_data = train_dataset[train_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type)]
+    merge_dataset = pd.merge(subj_data, obj_data, how='inner')
+    train_dataset = merge_dataset[merge_dataset['label']!='no_relation']
+    
+    train_label = label_to_num(train_dataset['label'].values,args.type_pair_id)
 
     ## 데이터 label 작업 해야됨!!!
     
@@ -73,12 +75,12 @@ def main(args):
         )
     
     # trainer = Trainer(
-    trainer = TrainerWithLossTuning(
+    trainer = TrainerwithFocalLoss(
         model=model,                     # the instantiated 🤗 Transformers model to be trained
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
-        compute_metrics=compute_metrics  # define metrics function
+        compute_metrics=multi_compute_metrics  # define metrics function
         # optimizers = optimizers
         # callbacks = [EarlyStoppingCallback(early_stopping_patience=cfg.train.patience)]# total_step / eval_step : max_patience
     )
@@ -95,7 +97,7 @@ def main(args):
 
     ## predict answer ## 절대 바꾸지 말 것 ##
     pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
-    pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
+    pred_answer = num_to_label(pred_answer,args.type_pair_id) # 숫자로 된 class를 원래 문자열 라벨로 변환.
 
     ## make csv file with predicted answer
     output = pd.DataFrame({'id':test_id,'pred_label':pred_answer,'probs':output_prob,})
@@ -125,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_length", default=256, type=int,
                         help="The maximum total input sequence length")
     
-    parser.add_argument('--type_pair_id', default=0, type=int, help='Type Pair Id, e.g. 0 for ORGANIZATION_PERSON.')
+    parser.add_argument('--type_pair_id', default=None, type=int, help='Type Pair Id, e.g. 0 for ORGANIZATION_PERSON.')
 
     parser.add_argument("--train_batch_size", default=32, type=int,
                         help="Total batch size for training.")
@@ -133,7 +135,7 @@ if __name__ == "__main__":
                         help="Total batch size for eval.")
     parser.add_argument("--learning_rate", default=5e-5, type=float,
                         help="The initial learning rate for Adam.")
-    parser.add_argument("--num_train_epochs", default=3.0, type=float,
+    parser.add_argument("--num_train_epochs", default=3, type=int,
                         help="Total number of training epochs to perform.")
     parser.add_argument('--seed', type=int, default=42,
                         help="random seed for initialization")
@@ -145,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument('--checkpoint_dir', type=str, help="checkpoint save directory")
     parser.add_argument('--save_model_dir', type=str, help="model save directory")
     parser.add_argument('--logging_step', type=int, default=1000, help="save-warmup-eval steps")
-    parser.add_argument('--weight_decay', type=int, default=0.01, help="weight decay")
+    parser.add_argument('--weight_decay', type=float, default=0.01, help="weight decay")
     
     args = parser.parse_args()
     wandb.login()
@@ -154,4 +156,3 @@ if __name__ == "__main__":
             name=args.wandb_name)
     main(args)
     wandb.finish()
-    test(args)

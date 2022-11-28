@@ -15,105 +15,118 @@ ID_TO_TYPE_PAIR = {
 LABEL_TO_ID = {
     0: # ORG_PER
     {
-        'org:top_members/employees': 1,
-        'org:founded_by': 28,
-        'org:alternate_names': 5,
+        'org:top_members/employees': 0,
+        'org:founded_by': 1,
+        'org:alternate_names': 2,
+        'org:product':3,
+        'org:members':4,
+        'org:place_of_headquarters':5,
+        'org:political/religious_affiliation':6,
+        'org:member_of':7
+            
     },
     1: # ORG_ORG
     {
-        'org:member_of': 20,
-        'org:alternate_names': 5,
+        'org:member_of': 0,
+        'org:alternate_names': 1,
         'org:members': 2,
-        'org:place_of_headquarters': 7,
-        'org:political/religious_affiliation': 19,
-        'org:product': 3,
-        'org:top_members/employees' : 1,
-        'org:founded_by' : 28,
+        'org:place_of_headquarters': 3,
+        'org:political/religious_affiliation': 4,
+        'org:product': 5,
+        'org:top_members/employees' : 6,
+        'org:founded_by' : 7,
     },
     2: # ORG_DAT
     {
-        'org:founded': 18,
-        'org:dissolved': 22,
+        'org:founded': 0,
+        'org:dissolved': 1,
+        'org:member_of':2,
+        'org:place_of_headquarters':3,
+        'org:members':4,
+        'org:political/religious_affiliation':5,
+        'org:alternate_names':6,
     },
     3: # ORG_LOC
     {
-        'org:place_of_headquarters': 7,
-        'org:member_of': 20,
+        'org:place_of_headquarters': 0,
+        'org:member_of': 1,
         'org:members': 2,
         'org:product': 3,
-        'org:alternate_names': 5,
+        'org:alternate_names': 4,
+        'org:top_members/employees': 5,
+        'org:political/religious_affiliation': 6,
     },
     4: # ORG_POH
     {
-        'org:member_of': 20,
-        'org:product': 3,
-        'org:alternate_names': 5,
-        'org:top_members/employees': 1,
-        'org:place_of_headquarters': 7,
-        'org:political/religious_affiliation': 19,
-        'org:members':2,
-        'org:founded_by':28,
+        'org:member_of': 0,
+        'org:product': 1,
+        'org:alternate_names': 2,
+        'org:top_members/employees': 3,
+        'org:place_of_headquarters': 4,
+        'org:political/religious_affiliation': 5,
+        'org:members': 6,
+        'org:founded_by': 7,
     },
     5: # ORG_NOH
     {
-        'org:number_of_employees/members': 9,
-        'org:member_of' :20,
+        'org:number_of_employees/members': 0,
+        'org:member_of' : 1,
     },
     6: # PER_PER
     {
-        'per:alternate_names': 12,
-        'per:spouse': 17,
-        'per:colleagues': 14,
-        'per:parents': 21,
-        'per:employee_of': 6,
-        'per:children': 10,
-        'per:other_family':13,
-        'per:siblings':16,
-        'per:origin': 15,  
-        'per:title':4,
+        'per:alternate_names': 0,
+        'per:spouse': 1,
+        'per:colleagues': 2,
+        'per:parents': 3,
+        'per:employee_of': 4,
+        'per:children': 5,
+        'per:other_family': 6,
+        'per:siblings': 7, 
+        'per:origin': 8,  
+        'per:title': 9,
     },
     7: # PER_ORG
     {
-        'per:employee_of': 6,
-        'per:origin': 15,
-        'per:title':4,
-        'per:schools_attended':23,
-        'per:religion': 29,
-        'per:alternate_names': 12, 
+        'per:employee_of': 0,
+        'per:origin': 1,
+        'per:title':2,
+        'per:schools_attended': 3,
+        'per:religion': 4,
+        'per:alternate_names': 5, 
     },
     8: # PER_DAT
     {
-        'per:date_of_birth': 25,
-        'per:date_of_death': 24,
-        'per:origin': 15,
-        'per:employee_of': 6,
+        'per:date_of_birth': 0,
+        'per:date_of_death': 1,
+        'per:origin': 2,
+        'per:employee_of': 3,
     },
     9: # PER_LOC
     {
-        'per:origin': 15,
-        'per:place_of_residence': 11,
-        'per:employee_of': 6,
-        'per:place_of_birth': 26,
+        'per:origin': 0,
+        'per:place_of_residence': 1,
+        'per:employee_of': 2,
+        'per:place_of_birth': 3,
         'per:title': 4,
-        'per:place_of_death': 27,
-        'per:alternate_names': 12,
+        'per:place_of_death': 5,
+        'per:alternate_names': 6,
     },
     10: # PER_POH
     {
-        'per:title': 4,
-        'per:employee_of': 6,
-        'per:product': 8,
-        'per:alternate_names':12,
-        'per:parents':21,
-        'per:origin':15,
-        'per:spouse':17,
-        'per:siblings':16,
-        'per:children':10,
+        'per:title': 0,
+        'per:employee_of': 1,
+        'per:product': 2,
+        'per:alternate_names': 3,
+        'per:parents': 4,
+        'per:origin': 5,
+        'per:spouse': 6,
+        'per:siblings': 7,
+        'per:children': 8,
     },
     11: # PER_NOH
     {
-        'per:title': 4,
-        'per:employee_of': 6,
+        'per:title': 0,
+        'per:employee_of': 1,
     },}
 
 def bi_klue_re_micro_f1(preds, labels):
@@ -171,7 +184,24 @@ def multi_klue_re_auprc(probs, labels, type_pair_id):
         score[c] = sklearn.metrics.auc(recall, precision)
     return np.average(score) * 100.0
 
-def compute_metrics(pred,):
+def bi_compute_metrics(pred,):
+    """ validation을 위한 metrics function """
+    labels = pred.label_ids
+    preds = pred.predictions.argmax(-1)
+    probs = pred.predictions
+
+    # calculate accuracy using sklearn's function
+    f1 = bi_klue_re_micro_f1(preds, labels)
+    auprc = bi_klue_re_auprc(probs, labels)
+    acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
+
+    return {
+      'micro_f1_score': f1,
+      'auprc' : auprc,
+      'accuracy': acc,
+    }
+
+def multi_compute_metrics(pred,):
     """ validation을 위한 metrics function """
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
@@ -197,7 +227,6 @@ def label_to_num(label,type_pair_id):
         dict_label_to_num = LABEL_TO_ID[type_pair_id]
     for v in label:
         num_label.append(dict_label_to_num[v])
-    print(num_label)
     return num_label
 
 class FocalLoss(nn.Module):
