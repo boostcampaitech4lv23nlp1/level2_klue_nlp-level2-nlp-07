@@ -13,74 +13,63 @@ from omegaconf import OmegaConf
 import wandb
 import argparse
 from load_data import *
-from utils_for_per import *
+from utils import *
 import random
+from inference import *
 
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["WANDB_DISABLED"] = "false"
-
-
-def main(cfg):
-    tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
+def main(args):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
 
-    print(device)
-    ########### setting model hyperparameter   ###########
-    model_config =  AutoConfig.from_pretrained(cfg.model.model_name)
-    model_config.num_labels = 18
+    # setting model hyperparameter #
+    model_config =  AutoConfig.from_pretrained(args.model)
+    model_config.num_labels = len(LABEL_TO_ID[args.type_pair_id])
 
-    model =  AutoModelForSequenceClassification.from_pretrained(cfg.model.model_name, config=model_config)
-    print(model.config)
-    optimizer = optim.AdamW(model.parameters(), lr = cfg.train.lr,eps = 1e-8 )
-    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=cfg.train.T_0, T_mult=cfg.train.T_mult, eta_min=cfg.train.eta_min)
-    optimizers = (optimizer,scheduler)
+    model =  AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
+    # optimizer = optim.AdamW(model.parameters(), lr = cfg.train.lr,eps = 1e-8 )
+    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=cfg.train.T_0, T_mult=cfg.train.T_mult, eta_min=cfg.train.eta_min)
+    # optimizers = (optimizer,scheduler)
     model.parameters
     model.to(device)
 
     ########### load dataset   ###########
-    train_dataset = load_data(cfg.data.train_data)
+    train_dataset = load_data(args.train_data_dir)
+    subj_type, obj_type = ID_TO_TYPE_PAIR[args.type_pair_id].split('_')
+    subj_data = train[train['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
+    obj_data = train[train['object_entity'].apply(lambda x: eval(x)['type']==obj_type)]
+    train_dataset = pd.merge(subj_data, obj_data, how='inner')
     train_label = label_to_num(train_dataset['label'].values)
-    train_x, dev_x, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.1,                                                                         random_state=cfg.train.seed)
-    train_x.reset_index(drop=True,inplace = True)
-    dev_x.reset_index(drop=True,inplace = True)
+
+    ## 데이터 label 작업 해야됨!!!
+    
+    train_data, dev_data, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2, random_state=args.seed, stratify=train_label)
+    train_data.reset_index(drop=True, inplace = True)
+    dev_data.reset_index(drop=True, inplace = True)
     # dev_dataset = load_data("../dataset/train/dev.csv") # validation용 데이터는 따로 만드셔야 합니다.
 
-
-    
-    
     # make dataset for pytorch.
-    RE_train_dataset = RE_Dataset(train_x,train_label, tokenizer)
-    RE_dev_dataset = RE_Dataset(dev_x,dev_label, tokenizer)
+    RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer)
+    RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer)
 
-    
-    
+    ## train arguments
     training_args = TrainingArguments(
-        output_dir=cfg.train.checkpoint,
-        save_total_limit=10,
-        save_steps=cfg.train.warmup_steps,
-        num_train_epochs=cfg.train.epoch,
-        learning_rate= cfg.train.lr,                         # default : 5e-5
-        
-        label_smoothing_factor = 0.01,
-        
-        per_device_train_batch_size=cfg.train.batch_size,    # default : 16
-        per_device_eval_batch_size=cfg.train.batch_size,     # default : 16
-        warmup_steps=cfg.train.warmup_steps,               
-        # weight_decay=cfg.train.weight_decay,               
-        
-        # for log
-        logging_steps=cfg.train.logging_step,               
+        output_dir=args.checkpoint_dir,
+        save_total_limit=5,
+        save_steps=args.logging_step,
+        num_train_epochs=args.num_train_epochs,
+        learning_rate=args.learning_rate,                         # default : 5e-5
+        per_device_train_batch_size= args.train_batch_size,    # default : 16
+        per_device_eval_batch_size= args.eval_batch_size,     # default : 16
+        warmup_steps= args.logging_step,               
+        weight_decay= args.weight_decay,               
+        logging_steps=100,               
         evaluation_strategy='steps',     
-        eval_steps = cfg.train.warmup_steps,                 # evaluation step.
+        eval_steps = args.logging_step,                 # evaluation step.
         load_best_model_at_end = True,
-        metric_for_best_model= 'eval_loss',
-        greater_is_better=False,                             # False : loss 기준으로 최적화 해봄 도르
-        dataloader_num_workers=cfg.train.num_workers,
-        fp16=True,
-
+        metric_for_best_model= 'micro_f1_score',
         # wandb
         report_to="wandb",
-        run_name= cfg.wandb.exp_name
+        run_name= args.wandb_name
         )
     
     # trainer = Trainer(
@@ -89,15 +78,28 @@ def main(cfg):
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
-        compute_metrics=compute_metrics,  # define metrics function
-        optimizers = optimizers
+        compute_metrics=compute_metrics  # define metrics function
+        # optimizers = optimizers
         # callbacks = [EarlyStoppingCallback(early_stopping_patience=cfg.train.patience)]# total_step / eval_step : max_patience
     )
 
     # train model
     trainer.train()
-    model.save_pretrained(cfg.model.saved_model)
-    
+    model.save_pretrained(args.save_model_dir)
+
+    ## load test datset
+    test_dataset_dir = args.test_data_dir
+    test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir,args.type_pair_id)
+
+    Re_test_dataset = RE_Dataset(test_dataset ,test_label, tokenizer)
+
+    ## predict answer ## 절대 바꾸지 말 것 ##
+    pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
+    pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
+
+    ## make csv file with predicted answer
+    output = pd.DataFrame({'id':test_id,'pred_label':pred_answer,'probs':output_prob,})
+    output.to_csv(args.output_dir, index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
 
 # set fixed random seed
 def seed_everything(seed):
@@ -110,13 +112,46 @@ def seed_everything(seed):
     random.seed(seed)
     print('lock_all_seed')
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='config_for_per')
-    args, _ = parser.parse_known_args()
+    parser.add_argument("--model", default=None, type=str, required=True)
+    parser.add_argument("--train_data_dir", default=None, type=str, required=True,
+                        help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
+    parser.add_argument("--test_data_dir", default=None, type=str, required=True,
+                        help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
+    parser.add_argument("--output_dir", default=None, type=str, required=True,
+                        help="The output directory where the model predictions will be written.")
+    parser.add_argument("--max_seq_length", default=256, type=int,
+                        help="The maximum total input sequence length")
+    
+    parser.add_argument('--type_pair_id', default=0, type=int, help='Type Pair Id, e.g. 0 for ORGANIZATION_PERSON.')
+
+    parser.add_argument("--train_batch_size", default=32, type=int,
+                        help="Total batch size for training.")
+    parser.add_argument("--eval_batch_size", default=32, type=int,
+                        help="Total batch size for eval.")
+    parser.add_argument("--learning_rate", default=5e-5, type=float,
+                        help="The initial learning rate for Adam.")
+    parser.add_argument("--num_train_epochs", default=3.0, type=float,
+                        help="Total number of training epochs to perform.")
+    parser.add_argument('--seed', type=int, default=42,
+                        help="random seed for initialization")
+    # parser.add_argument('--gradient_accumulation_steps', type=int, default=1,
+    #                     help="Number of updates steps to accumulate before performing a backward/update pass.")
+    # parser.add_argument('--fp16', action='store_true',
+    #                     help="Whether to use 16-bit float precision instead of 32-bit")
+    parser.add_argument('--wandb_name', type=str, help="you should write your own exp name")
+    parser.add_argument('--checkpoint_dir', type=str, help="checkpoint save directory")
+    parser.add_argument('--save_model_dir', type=str, help="model save directory")
+    parser.add_argument('--logging_step', type=int, default=1000, help="save-warmup-eval steps")
+    parser.add_argument('--weight_decay', type=int, default=0.01, help="weight decay")
+    
+    args = parser.parse_args()
     wandb.login()
-    cfg = OmegaConf.load(f'./config/{args.config}.yaml')
-    seed_everything(cfg.train.seed)
-    wandb.init(project=cfg.wandb.project_name, entity=cfg.wandb.entity, name=cfg.wandb.exp_name)
-    main(cfg)
+    seed_everything(args.seed)
+    wandb.init(project=args.model.replace('/','-'), entity='klue-bora', 
+            name=args.wandb_name)
+    main(args)
     wandb.finish()
+    test(args)

@@ -8,113 +8,112 @@ import torch
 from transformers import Trainer
 
 ID_TO_TYPE_PAIR = {
-    0: 'ORG_PER',1: 'ORG_ORG',2: 'ORG_DAT',3: 'ORG_LOC',4: 'ORG_POH',5: 'ORG_NOH',
-    6: 'PER_PER',7: 'PER_ORG',8: 'PER_DAT',9: 'PER_LOC',10: 'PER_POH',11: 'PER_NOH'
+    0: 'ORG_PER', 1: 'ORG_ORG', 2: 'ORG_DAT', 3: 'ORG_LOC', 4: 'ORG_POH', 5: 'ORG_NOH',
+    6: 'PER_PER', 7: 'PER_ORG', 8: 'PER_DAT', 9: 'PER_LOC', 10: 'PER_POH', 11: 'PER_NOH'
 }
 
 LABEL_TO_ID = {
     0: # ORG_PER
     {
-        'org:top_members/employees': 0,
-        'org:founded_by': 1,
-        'org:alternate_names': 2,
+        'org:top_members/employees': 1,
+        'org:founded_by': 28,
+        'org:alternate_names': 5,
     },
     1: # ORG_ORG
     {
-        'org:member_of': 0,
-        'org:alternate_names': 1,
+        'org:member_of': 20,
+        'org:alternate_names': 5,
         'org:members': 2,
-        'org:place_of_headquarters': 3,
-        'org:political/religious_affiliation': 4,
-        'org:product': 5,
-        'org:top_members/employees' : 6,
-        'org:founded_by' : 7,
+        'org:place_of_headquarters': 7,
+        'org:political/religious_affiliation': 19,
+        'org:product': 3,
+        'org:top_members/employees' : 1,
+        'org:founded_by' : 28,
     },
     2: # ORG_DAT
     {
-        'org:founded': 0,
-        'org:dissolved': 1,
+        'org:founded': 18,
+        'org:dissolved': 22,
     },
     3: # ORG_LOC
     {
-        'org:place_of_headquarters': 0,
-        'org:country_of_headquarters': 1,
-        'org:member_of': 2,
-        'org:members': 3,
-        'org:product': 4,
+        'org:place_of_headquarters': 7,
+        'org:member_of': 20,
+        'org:members': 2,
+        'org:product': 3,
         'org:alternate_names': 5,
     },
     4: # ORG_POH
     {
-        'org:member_of': 0,
-        'org:product': 1,
-        'org:alternate_names': 2,
-        'org:top_members/employees': 3,
-        'org:place_of_headquarters': 4,
-        'org:political/religious_affiliation': 5,
-        'org:members':6,
-        'org:founded_by':7,
+        'org:member_of': 20,
+        'org:product': 3,
+        'org:alternate_names': 5,
+        'org:top_members/employees': 1,
+        'org:place_of_headquarters': 7,
+        'org:political/religious_affiliation': 19,
+        'org:members':2,
+        'org:founded_by':28,
     },
     5: # ORG_NOH
     {
-        'org:number_of_employees/members': 0,
-        'org:member_of' :1,
+        'org:number_of_employees/members': 9,
+        'org:member_of' :20,
     },
     6: # PER_PER
     {
-        'per:alternate_names': 0,
-        'per:spouse': 1,
-        'per:colleagues': 2,
-        'per:parents': 3,
-        'per:employee_of': 4,
-        'per:children': 5,
-        'per:other_family':6,
-        'per:siblings':7,
-        'per:origin': 8,  
-        'per:title':9,
+        'per:alternate_names': 12,
+        'per:spouse': 17,
+        'per:colleagues': 14,
+        'per:parents': 21,
+        'per:employee_of': 6,
+        'per:children': 10,
+        'per:other_family':13,
+        'per:siblings':16,
+        'per:origin': 15,  
+        'per:title':4,
     },
     7: # PER_ORG
     {
-        'per:employee_of': 0,
-        'per:origin': 1,
-        'per:title':2,
-        'per:schools_attended':3,
-        'per:religion': 4,
-        'per:alternate_names': 5, 
+        'per:employee_of': 6,
+        'per:origin': 15,
+        'per:title':4,
+        'per:schools_attended':23,
+        'per:religion': 29,
+        'per:alternate_names': 12, 
     },
     8: # PER_DAT
     {
-        'per:date_of_birth': 0,
-        'per:date_of_death': 1,
-        'per:origin': 2,
-        'per:employee_of': 3,
+        'per:date_of_birth': 25,
+        'per:date_of_death': 24,
+        'per:origin': 15,
+        'per:employee_of': 6,
     },
     9: # PER_LOC
     {
-        'per:origin': 0,
-        'per:place_of_residence': 1,
-        'per:employee_of': 2,
-        'per:place_of_birth': 3,
+        'per:origin': 15,
+        'per:place_of_residence': 11,
+        'per:employee_of': 6,
+        'per:place_of_birth': 26,
         'per:title': 4,
-        'per:place_of_death': 5,
-        'per:alternate_names': 6,
+        'per:place_of_death': 27,
+        'per:alternate_names': 12,
     },
     10: # PER_POH
     {
-        'per:title': 0,
-        'per:employee_of': 1,
-        'per:product': 2,
-        'per:alternate_names':3,
-        'per:parents':4,
-        'per:origin':5,
-        'per:spouse':6,
-        'per:siblings':7,
-        'per:children':8,
+        'per:title': 4,
+        'per:employee_of': 6,
+        'per:product': 8,
+        'per:alternate_names':12,
+        'per:parents':21,
+        'per:origin':15,
+        'per:spouse':17,
+        'per:siblings':16,
+        'per:children':10,
     },
     11: # PER_NOH
     {
-        'per:title': 0,
-        'per:employee_of': 1,
+        'per:title': 4,
+        'per:employee_of': 6,
     },}
 
 def bi_klue_re_micro_f1(preds, labels):
@@ -151,7 +150,7 @@ def bi_klue_re_auprc(probs, labels):
 
 def multi_klue_re_micro_f1(preds, labels, type_pair_id):
     """KLUE-RE micro f1 (except no_relation)"""
-    label_list = list(LABEL_TO_ID(type_pair_id).keys())
+    label_list = list(LABEL_TO_ID[type_pair_id].keys())
 
     # no_relation class를 제외한 micro F1 score
     # no_relation_label_idx = label_list.index("no_relation")
@@ -172,7 +171,7 @@ def multi_klue_re_auprc(probs, labels, type_pair_id):
         score[c] = sklearn.metrics.auc(recall, precision)
     return np.average(score) * 100.0
 
-def compute_metrics(pred, ):
+def compute_metrics(pred,):
     """ validation을 위한 metrics function """
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
@@ -189,16 +188,17 @@ def compute_metrics(pred, ):
       'accuracy': acc,
     }
 
-def label_to_num(label):
+def label_to_num(label,type_pair_id):
     num_label = []
-    with open('/opt/ml/code/dict_label_to_num.pkl', 'rb') as f:
-        dict_label_to_num = pickle.load(f)
+    if type_pair_id == None:
+        with open('/opt/ml/code/dict_label_to_num.pkl', 'rb') as f:
+            dict_label_to_num = pickle.load(f)
+    else:
+        dict_label_to_num = LABEL_TO_ID[type_pair_id]
     for v in label:
         num_label.append(dict_label_to_num[v])
-
+    print(num_label)
     return num_label
-
-
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=1, gamma=2, logits=False, reduce=True):
