@@ -22,3 +22,4 @@ prediction/
 .wget-hsts
 my_baseline/
 notebooks/.ipynb_checkpoints/
+/opt/ml/git_k/level2_klue_nlp-level2-nlp-07/for_binary/for_binary/data/
