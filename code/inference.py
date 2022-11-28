@@ -13,7 +13,7 @@ def inference(model, tokenized_sent, device):
     """
     test dataset을 DataLoader로 만들어 준 후, batch_size로 나눠 model이 예측 합니다.
     """
-    dataloader = DataLoader(tokenized_sent, batch_size=16, shuffle=False) # batch_size= 16
+    dataloader = DataLoader(tokenized_sent, batch_size=32, shuffle=False) # batch_size= 16
     model.eval()
     output_pred = []
     output_prob = []
@@ -68,7 +68,7 @@ def test(cfg):
     ## load test datset
     test_dataset_dir = cfg.data.test_data
     test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir)
-    Re_test_dataset = RE_Dataset(test_dataset ,test_label, tokenizer)
+    Re_test_dataset = RE_Dataset(test_dataset ,test_label, tokenizer, cfg)
     
     ## predict answer ## 절대 바꾸지 말 것 ##
     pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론

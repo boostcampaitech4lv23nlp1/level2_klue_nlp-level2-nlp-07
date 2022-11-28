@@ -34,8 +34,15 @@ def train(cfg):
     dev_data.reset_index(drop=True, inplace = True)
 
     ## make dataset for pytorch
-    RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer)
-    RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer)
+    RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer, cfg)
+    RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer, cfg)
+    model.resize_token_embeddings(len(RE_train_dataset.tokenizer))
+
+    if cfg.train.entity_embedding:
+        print('='*10, "Start", '='*10)
+        insert_entity_idx_tokenized_dataset(tokenizer, RE_train_dataset.dataset, cfg)
+        insert_entity_idx_tokenized_dataset(tokenizer, RE_dev_dataset.dataset, cfg)
+        print('='*10, "END", '='*10)
 
     ## make samples_per_class (which is needed for TrainerwithLosstuning)
     train_label_counter = Counter(train_label)

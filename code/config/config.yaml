@@ -5,28 +5,30 @@ data:
 
 model:
   model_name: klue/roberta-small
-  saved_model: /opt/ml/code/mine/save_model/3_klue_roberta-small ## should be changed at every experiment
+  saved_model: /opt/ml/code/mine/save_model/26_klue_roberta_small_TEM_punct_test ## should be changed at every experiment
 
 train:
   train_mode: True
   seed: 42
   batch_size: 32
-  epoch: 1
+  epoch: 10
   lr: 5e-5
   logging_step: 1000
   weight_decay: 0.01
   checkpoint: /opt/ml/code/mine/results
-  loss: "focal_loss" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
+  loss: "cross_entropy" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
   beta: 0.99
   gamma: 2
+  marker_mode: "TEM_punct" ## "EMask", "EM", "TEM", "TEM_punct"
+  entity_embedding: True
   # patience : 10
 
 test:
   test_mode: True
   num_to_label: /opt/ml/code/dict_num_to_label.pkl
-  output_csv: /opt/ml/code/prediction/3_klue_roberta_small.csv ## should be changed at every experiment
+  output_csv: /opt/ml/code/prediction/26_klue_roberta_small_TEM_punct_test.csv ## should be changed at every experiment
 
 wandb:
-  project_name: testtest
+  project_name: klue-roberta-small
   entity: klue-bora
-  exp_name: testtest_DM
+  exp_name: 26_klue_roberta_small_TEM_punct_test
