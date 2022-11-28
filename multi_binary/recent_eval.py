@@ -25,9 +25,9 @@ for type_id in range(0, 4):
     pred_probs = []
     for idx, r in preds.iterrows():
         zeros = np.zeros(30)
+        # id 찾아서 바꿔주기
         for jdx, p in zip(label_idx, eval(r['probs'])):
             zeros[jdx] = p
-        binary_predictions.loc[r['id'],'pred_label'] = r['pred_label'] 
-        binary_predictions.loc[r['id'],'probs'] = str(zeros)
+        binary_predictions.loc[r['id'],['pred_label','probs']] = [r['pred_label'],str(zeros)]
 
 binary_predictions.to_csv('/opt/ml/code/prediction/recent/depot-recent-final.csv')
