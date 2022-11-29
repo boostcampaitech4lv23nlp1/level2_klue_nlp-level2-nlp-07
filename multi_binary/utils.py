@@ -8,6 +8,10 @@ import argparse
 
 from transformers import Trainer
 
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--type_pair_id', default=None, type=int)
+# args = parser.parse_args()
+
 ID_TO_TYPE_PAIR = {
     0: 'ORG_PER', 1: 'ORG_ORG', 2: 'ORG_DAT', 3: 'ORG_LOC', 4: 'ORG_POH', 5: 'ORG_NOH',
     6: 'PER_PER', 7: 'PER_ORG', 8: 'PER_DAT', 9: 'PER_LOC', 10: 'PER_POH', 11: 'PER_NOH'
@@ -164,6 +168,7 @@ def bi_klue_re_auprc(probs, labels):
         score[c] = sklearn.metrics.auc(recall, precision)
     return np.average(score) * 100.0
 
+
 def multi_klue_re_micro_f1(preds, labels, type_pair_id):
     """KLUE-RE micro f1 (except no_relation)"""
     label_list = list(LABEL_TO_ID[type_pair_id].keys())
@@ -173,6 +178,7 @@ def multi_klue_re_micro_f1(preds, labels, type_pair_id):
     label_indices = list(range(len(label_list)))
     # label_indices.remove(no_relation_label_idx)
     return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
+
 
 def multi_klue_re_auprc(probs, labels, type_pair_id):
     """KLUE-RE AUPRC (with no_relation)"""
@@ -203,24 +209,9 @@ def bi_compute_metrics(pred,):
       'accuracy': acc,
     }
 
-def multi_compute_metrics(pred,):
-    """ validation을 위한 metrics function """
-    labels = pred.label_ids
-    preds = pred.predictions.argmax(-1)
-    probs = pred.predictions
 
-    # calculate accuracy using sklearn's function
-    f1 = multi_klue_re_micro_f1(preds, labels, args.type_pair_id)
-    auprc = multi_klue_re_auprc(probs, labels, args.type_pair_id)
-    acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
 
-    return {
-      'micro_f1_score': f1,
-      'auprc' : auprc,
-      'accuracy': acc,
-    }
-
-def label_to_num(label,type_pair_id):
+def label_to_num(label, type_pair_id):
     num_label = []
     if type_pair_id == None:
         with open('/opt/ml/code/dict_label_to_num.pkl', 'rb') as f:
