@@ -78,7 +78,6 @@ def main(args):
         # optimizers = optimizers
         # callbacks = [EarlyStoppingCallback(early_stopping_patience=cfg.train.patience)]# total_step / eval_step : max_patience
     )
-
     # train model
     trainer.train()
     model.save_pretrained(args.save_model_dir)

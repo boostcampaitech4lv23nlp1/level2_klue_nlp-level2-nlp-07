@@ -41,8 +41,6 @@ def main(args):
     train_dataset = merge_dataset[merge_dataset['label']!='no_relation']
     
     train_label = label_to_num(train_dataset['label'].values,args.type_pair_id)
-
-    ## 데이터 label 작업 해야됨!!!
     
     train_data, dev_data, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2, random_state=args.seed, stratify=train_label)
     train_data.reset_index(drop=True, inplace = True)

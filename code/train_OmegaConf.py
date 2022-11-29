@@ -10,8 +10,17 @@ from load_data import *
 from utils import *
 import random
 from collections import Counter
+import wandb
 
 def train(cfg):
+    # start wandb
+    config_defaults = {
+            'batch_size' : 32,
+    }
+    wandb.init(config=config_defaults)
+    wandb_config = wandb.config
+    wandb.run.name = '{}_{}'.format(cfg.wandb.project_name,wandb_config.batch_size)
+    wandb_params = '/batch-{}'.format(wandb_config.batch_size)
     ## Device
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
@@ -51,16 +60,16 @@ def train(cfg):
     ## make samples_per_class (which is needed for TrainerwithLosstuning)
     train_label_counter = Counter(train_label)
     samples_per_class = [train_label_counter[i] for i in range(model_config.num_labels)] ## [7765, 1023, 339, ....]
-
+    
     ## train arguments
     training_args = TrainingArguments(
-        output_dir=cfg.train.checkpoint,
+        output_dir=cfg.train.checkpoint + wandb_params,
         save_total_limit=5,
         save_steps=cfg.train.logging_step,
         num_train_epochs=cfg.train.epoch,
         learning_rate= cfg.train.lr,                         # default : 5e-5
-        per_device_train_batch_size=cfg.train.batch_size,    # default : 32
-        per_device_eval_batch_size=cfg.train.batch_size,     # default : 32
+        per_device_train_batch_size=wandb_config.batch_size,    # default : 32
+        per_device_eval_batch_size=wandb_config.batch_size,     # default : 32
         warmup_steps=cfg.train.logging_step,               
         weight_decay=cfg.train.weight_decay,               
         logging_steps=100,               
@@ -70,7 +79,7 @@ def train(cfg):
         metric_for_best_model= 'micro_f1_score',
         # wandb
         report_to="wandb",
-        run_name= cfg.wandb.exp_name
+        run_name= wandb.run.name
         )
     ## setting custom trainer with default optimizer & scheduler : AdamW, LambdaLR
     trainer = TrainerwithLosstuning(
@@ -80,12 +89,13 @@ def train(cfg):
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
         compute_metrics=compute_metrics,  # define metrics function
-        callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
-                                    early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
+        # callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
+        #                             early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
     )
 
     ## train model
     trainer.train()
     
     ## save model
-    model.save_pretrained(cfg.model.saved_model)
+    model.save_pretrained(cfg.model.saved_model + wandb_params)
+    # wandb.finish()

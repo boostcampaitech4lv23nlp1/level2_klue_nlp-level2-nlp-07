@@ -8,6 +8,7 @@ from utils import *
 import pickle as pickle
 import numpy as np
 from tqdm import tqdm
+import wandb
 
 def inference(model, tokenized_sent, device):
     """
@@ -111,12 +112,14 @@ def load_test_dataset(dataset_dir):
 
 def test(cfg):
     ## Device
+    wandb_config = wandb.config
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     ## load Model & Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
     # if best model
-    model = AutoModelForSequenceClassification.from_pretrained(cfg.model.saved_model)
+    wandb_params = '/batch-{}'.format(wandb_config.batch_size)
+    model = AutoModelForSequenceClassification.from_pretrained(cfg.model.saved_model+wandb_params)
     # elif checkpoint
     # model = AutoModelForSequenceClassification.from_pretrained(cfg.test.load_cp)
     model.parameters
@@ -143,8 +146,8 @@ def test(cfg):
 
     ## make csv file with predicted answer
     output = pd.DataFrame({'id':test_id,'pred_label':pred_answer,'probs':output_prob,})
-    output.to_csv(cfg.test.output_csv, index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    output.to_csv(cfg.test.output_csv + wandb_params +'.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     
     ## make dev csv file with predicted answer
     dev_output = pd.DataFrame({'id':dev_id,'gold_label':dev_label,'pred_label':dev_pred_answer,'probs':dev_output_prob,})
-    dev_output.to_csv(cfg.test.dev_csv, index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    dev_output.to_csv(cfg.test.dev_csv + wandb_params +'.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
