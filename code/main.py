@@ -28,11 +28,12 @@ def seed_everything(seed):
     print('lock_all_seed')
 
 def wandb_function(cfg):
-    wfg = cfg 
-    print('------------------- train start -------------------------')
-    train(wfg)
-    print('--------------------- test start ----------------------')
-    test(wfg)
+    if cfg.train.train_mode:
+        print('------------------- train start -------------------------')
+        train(cfg)
+    if cfg.test.test_mode:
+        print('--------------------- test start ----------------------')
+        test(cfg)
     print('----------------- Finish! ---------------------')
 
     ## Reset the Memory

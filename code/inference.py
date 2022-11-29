@@ -133,7 +133,7 @@ def test(cfg):
     ## Load dev dataset
     dev_dataset_dir = cfg.data.dev_data
     dev_id, dev_dataset, dev_label = load_test_dataset(dev_dataset_dir)
-    Re_dev_dataset = RE_Dataset(dev_dataset ,dev_label, tokenizer)
+    Re_dev_dataset = RE_Dataset(dev_dataset ,dev_label, tokenizer, cfg)
 
     ## predict answer ## 절대 바꾸지 말 것 ##
     pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
