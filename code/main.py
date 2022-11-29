@@ -28,10 +28,11 @@ def seed_everything(seed):
     print('lock_all_seed')
 
 def wandb_function(cfg):
+    wfg = cfg 
     print('------------------- train start -------------------------')
-    train(cfg)
+    train(wfg)
     print('--------------------- test start ----------------------')
-    test(cfg)
+    test(wfg)
     print('----------------- Finish! ---------------------')
 
     ## Reset the Memory
@@ -66,9 +67,9 @@ sweep_id = wandb.sweep(
 pprint.pprint(sweep_config)
     # wandb.init(project=cfg.wandb.project_name, entity=cfg.wandb.entity, name=cfg.wandb.exp_name)
 
-# wandb.agent(sweep_id, function=wandb_function(cfg))
+wandb.agent(sweep_id, function=wandb_function(cfg))
 
-wandb.agent(sweep_id, function=train(cfg))
-wandb.agent(sweep_id, function=test(cfg))
+# wandb.agent(sweep_id, function=train(cfg))
+# wandb.agent(sweep_id, function=test(cfg))
     ## wandb finish
     # wandb.finish()
