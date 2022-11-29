@@ -17,6 +17,23 @@ from utils import *
 import random
 from inference import *
 
+def multi_compute_metrics(pred, ):
+    """ validation을 위한 metrics function """
+    labels = pred.label_ids
+    preds = pred.predictions.argmax(-1)
+    probs = pred.predictions
+
+    # calculate accuracy using sklearn's function
+    f1 = multi_klue_re_micro_f1(preds, labels, args.type_pair_id)
+    auprc = multi_klue_re_auprc(probs, labels, args.type_pair_id)
+    acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
+
+    return {
+      'micro_f1_score': f1,
+      'auprc' : auprc,
+      'accuracy': acc,
+    }
+
 def main(args):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     tokenizer = AutoTokenizer.from_pretrained(args.model)
@@ -80,7 +97,7 @@ def main(args):
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
-        compute_metrics=multi_compute_metrics  # define metrics function
+        compute_metrics=multi_compute_metrics # define metrics function
         # optimizers = optimizers
         # callbacks = [EarlyStoppingCallback(early_stopping_patience=cfg.train.patience)]# total_step / eval_step : max_patience
     )

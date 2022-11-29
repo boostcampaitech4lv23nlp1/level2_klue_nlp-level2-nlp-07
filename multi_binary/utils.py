@@ -4,8 +4,13 @@ import numpy as np
 import pickle as pickle
 from torch import nn
 import torch
+import argparse
 
 from transformers import Trainer
+
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--type_pair_id', default=None, type=int)
+# args = parser.parse_args()
 
 ID_TO_TYPE_PAIR = {
     0: 'ORG_PER', 1: 'ORG_ORG', 2: 'ORG_DAT', 3: 'ORG_LOC', 4: 'ORG_POH', 5: 'ORG_NOH',
@@ -17,13 +22,7 @@ LABEL_TO_ID = {
     {
         'org:top_members/employees': 0,
         'org:founded_by': 1,
-        'org:alternate_names': 2,
-        'org:product':3,
-        'org:members':4,
-        'org:place_of_headquarters':5,
-        'org:political/religious_affiliation':6,
-        'org:member_of':7
-            
+        'org:alternate_names': 2,       
     },
     1: # ORG_ORG
     {
@@ -34,17 +33,12 @@ LABEL_TO_ID = {
         'org:political/religious_affiliation': 4,
         'org:product': 5,
         'org:top_members/employees' : 6,
-        'org:founded_by' : 7,
     },
     2: # ORG_DAT
     {
         'org:founded': 0,
         'org:dissolved': 1,
         'org:member_of':2,
-        'org:place_of_headquarters':3,
-        'org:members':4,
-        'org:political/religious_affiliation':5,
-        'org:alternate_names':6,
     },
     3: # ORG_LOC
     {
@@ -71,6 +65,7 @@ LABEL_TO_ID = {
     {
         'org:number_of_employees/members': 0,
         'org:member_of' : 1,
+        'org:alternate_names':2,
     },
     6: # PER_PER
     {
@@ -84,6 +79,7 @@ LABEL_TO_ID = {
         'per:siblings': 7, 
         'per:origin': 8,  
         'per:title': 9,
+        'per:product':10,
     },
     7: # PER_ORG
     {
@@ -93,6 +89,9 @@ LABEL_TO_ID = {
         'per:schools_attended': 3,
         'per:religion': 4,
         'per:alternate_names': 5, 
+        'per:place_of_residence': 6,
+        'per:product': 7,
+        'per:colleagues': 8,
     },
     8: # PER_DAT
     {
@@ -100,6 +99,9 @@ LABEL_TO_ID = {
         'per:date_of_death': 1,
         'per:origin': 2,
         'per:employee_of': 3,
+        'per:parents': 4,
+        'per:place_of_residence': 5,
+        'per:title': 6,
     },
     9: # PER_LOC
     {
@@ -109,7 +111,6 @@ LABEL_TO_ID = {
         'per:place_of_birth': 3,
         'per:title': 4,
         'per:place_of_death': 5,
-        'per:alternate_names': 6,
     },
     10: # PER_POH
     {
@@ -122,11 +123,17 @@ LABEL_TO_ID = {
         'per:spouse': 6,
         'per:siblings': 7,
         'per:children': 8,
+        'per:religion': 9,
+        'per:colleagues': 10,
+        'per:other_family': 11,
+        'per:place_of_residence': 12,
     },
     11: # PER_NOH
     {
         'per:title': 0,
         'per:employee_of': 1,
+        'per:date_of_birth': 2,
+        'per:date_of_death': 3,
     },}
 
 def bi_klue_re_micro_f1(preds, labels):
@@ -161,6 +168,7 @@ def bi_klue_re_auprc(probs, labels):
         score[c] = sklearn.metrics.auc(recall, precision)
     return np.average(score) * 100.0
 
+
 def multi_klue_re_micro_f1(preds, labels, type_pair_id):
     """KLUE-RE micro f1 (except no_relation)"""
     label_list = list(LABEL_TO_ID[type_pair_id].keys())
@@ -170,6 +178,7 @@ def multi_klue_re_micro_f1(preds, labels, type_pair_id):
     label_indices = list(range(len(label_list)))
     # label_indices.remove(no_relation_label_idx)
     return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
+
 
 def multi_klue_re_auprc(probs, labels, type_pair_id):
     """KLUE-RE AUPRC (with no_relation)"""
@@ -201,24 +210,9 @@ def bi_compute_metrics(pred,):
       'accuracy': acc,
     }
 
-def multi_compute_metrics(pred,):
-    """ validation을 위한 metrics function """
-    labels = pred.label_ids
-    preds = pred.predictions.argmax(-1)
-    probs = pred.predictions
 
-    # calculate accuracy using sklearn's function
-    f1 = multi_klue_re_micro_f1(preds, labels)
-    auprc = multi_klue_re_auprc(probs, labels)
-    acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
 
-    return {
-      'micro_f1_score': f1,
-      'auprc' : auprc,
-      'accuracy': acc,
-    }
-
-def label_to_num(label,type_pair_id):
+def label_to_num(label, type_pair_id):
     num_label = []
     if type_pair_id == None:
         with open('/opt/ml/code/dict_label_to_num.pkl', 'rb') as f:
