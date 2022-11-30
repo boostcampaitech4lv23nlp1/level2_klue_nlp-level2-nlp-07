@@ -61,8 +61,6 @@ class RE_Dataset(torch.utils.data.Dataset):
             outputs = self.tokenizer(text, add_special_tokens=True,
                                           truncation=True,
                                           return_tensors="pt",
-                                          padding='max_length',
-                                          max_length=256
                                     )
             data.append(outputs)
         return data

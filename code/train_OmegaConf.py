@@ -15,10 +15,13 @@ import wandb
 import argparse
 import pprint
 import yaml
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+
+from transformers import DataCollatorWithPadding
 
 def train(cfg):
     ## yaml 파일 경로 설정
-    with open('/opt/ml/git_k/level2_klue_nlp-level2-nlp-07/code/sweep.yaml') as file:
+    with open('/opt/ml/baseline/code/sweep.yaml') as file:
         sweep_config = yaml.load(file, Loader=yaml.FullLoader)
     ## wandb initialize 해주기
     run = wandb.init(config=sweep_config)
@@ -93,16 +96,25 @@ def train(cfg):
         eval_steps = cfg.train.logging_step,                 # evaluation step.
         load_best_model_at_end = True,
         metric_for_best_model= 'micro_f1_score',
-        fp16=True
+        fp16=True,
         # wandb
         # report_to="wandb",
         # run_name= wandb.run.name
+        group_by_length=cfg.train.group_by_length
         )
+
+    ## setting data_collator
+    if cfg.train.padding == "max_length":
+        data_collator = DataCollatorWithPadding(tokenizer, padding = "max_length", max_length=cfg.train.max_length)
+    elif cfg.train.padding == "longest":
+        data_collator = DataCollatorWithPadding(tokenizer, padding = True)
+
    ## setting custom trainer with default optimizer & scheduler : AdamW, LambdaLR
     trainer = TrainerwithLosstuning(
         samples_per_class=samples_per_class,
         model=model,                     # the instantiated 🤗 Transformers model to be trained
         args=training_args,              # training arguments, defined above
+        data_collator = data_collator,   # data collator (dynamic padding or smart batching)
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
         compute_metrics=compute_metrics, # define metrics function

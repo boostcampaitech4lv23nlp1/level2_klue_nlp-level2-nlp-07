@@ -10,8 +10,9 @@ from load_data import *
 from utils import *
 import random
 from collections import Counter
+from transformers import DataCollatorWithPadding
 
-def train(cfg):
+def train_single(cfg):
     ## Device
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
@@ -70,13 +71,21 @@ def train(cfg):
         metric_for_best_model= 'micro_f1_score',
         # wandb
         report_to="wandb",
-        run_name= cfg.wandb.exp_name
+        run_name= cfg.wandb.exp_name,
+        group_by_length=cfg.train.group_by_length
         )
+    ## setting data_collator
+    if cfg.train.padding == "max_length":
+        data_collator = DataCollatorWithPadding(tokenizer, padding = "max_length", max_length=cfg.train.max_length)
+    elif cfg.train.padding == "longest":
+        data_collator = DataCollatorWithPadding(tokenizer, padding = True)
+    
     ## setting custom trainer with default optimizer & scheduler : AdamW, LambdaLR
     trainer = TrainerwithLosstuning(
         samples_per_class=samples_per_class,
         model=model,                     # the instantiated 🤗 Transformers model to be trained
         args=training_args,              # training arguments, defined above
+        data_collator = data_collator,   # data collator (dynamic padding or smart batching)
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
         compute_metrics=compute_metrics,  # define metrics function

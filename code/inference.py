@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding
 from torch.utils.data import DataLoader
 from load_data import *
 import pandas as pd
@@ -10,12 +10,12 @@ import numpy as np
 from tqdm import tqdm
 import wandb
 
-def inference(model, tokenized_sent, device):
+def inference(model, tokenized_sent, device, tokenizer):
     """
     test dataset을 DataLoader로 만들어 준 후,
     batch_size로 나눠 model이 예측 합니다.
     """
-    dataloader = DataLoader(tokenized_sent, batch_size=32, shuffle=False) # batch_size= 16
+    dataloader = DataLoader(tokenized_sent, batch_size=32, shuffle=False, collate_fn=DataCollatorWithPadding(tokenizer)) # batch_size= 16
     model.eval()
     output_pred = []
     output_prob = []
@@ -134,11 +134,11 @@ def test(cfg):
     Re_dev_dataset = RE_Dataset(dev_dataset ,dev_label, tokenizer, cfg)
 
     ## predict answer ## 절대 바꾸지 말 것 ##
-    pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
+    pred_answer, output_prob = inference(model, Re_test_dataset, device, tokenizer) # model에서 class 추론
     pred_answer = num_to_label(cfg, pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
 
     ## dev predict & gold label
-    dev_pred_answer, dev_output_prob = inference(model, Re_dev_dataset, device) # model에서 class 추론
+    dev_pred_answer, dev_output_prob = inference(model, Re_dev_dataset, device, tokenizer) # model에서 class 추론
     dev_pred_answer = num_to_label(cfg, dev_pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
     gold_answer = num_to_label(cfg, dev_label)
 
