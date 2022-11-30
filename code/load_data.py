@@ -23,27 +23,25 @@ class RE_Dataset(torch.utils.data.Dataset):
         
         self.cfg = cfg
     def __getitem__(self, idx):
-        if self.cfg.train.entity_embedding:
-            if len(self.labels) ==0:
+        if self.cfg.model.model_name == 'xlm-roberta-base' or self.cfg.model.model_name == 'xlm-roberta-large':
+            if self.cfg.train.entity_embedding:
                 return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
                         'attention_mask': torch.LongTensor(self.dataset[idx]['attention_mask']).squeeze(0),
-                        'token_type_ids': torch.LongTensor(self.dataset[idx]['token_type_ids']).squeeze(0),
                         'Entity_type_embedding': torch.LongTensor(self.dataset[idx]['Entity_type_embedding']).squeeze(0),
-                        'Entity_idxes': torch.LongTensor(self.dataset[idx]['Entity_idxes']).squeeze(0)                    
-                            }
+                        'Entity_idxes': torch.LongTensor(self.dataset[idx]['Entity_idxes']).squeeze(0),
+                        'labels' : torch.LongTensor([self.labels[idx]]).squeeze()}
             else:
+                return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
+                        'attention_mask': torch.LongTensor(self.dataset[idx]['attention_mask']).squeeze(0),
+                        'labels' : torch.LongTensor([self.labels[idx]]).squeeze()}
+        else: ## koelectra or klue/roberta
+            if self.cfg.train.entity_embedding:
                 return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
                         'attention_mask': torch.LongTensor(self.dataset[idx]['attention_mask']).squeeze(0),
                         'token_type_ids': torch.LongTensor(self.dataset[idx]['token_type_ids']).squeeze(0),
                         'Entity_type_embedding': torch.LongTensor(self.dataset[idx]['Entity_type_embedding']).squeeze(0),
                         'Entity_idxes': torch.LongTensor(self.dataset[idx]['Entity_idxes']).squeeze(0),
                         'labels' : torch.LongTensor([self.labels[idx]]).squeeze()}
-        else:
-            if len(self.labels) ==0:
-                return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
-                        'attention_mask': torch.LongTensor(self.dataset[idx]['attention_mask']).squeeze(0),
-                        'token_type_ids': torch.LongTensor(self.dataset[idx]['token_type_ids']).squeeze(0)                    
-                            }
             else:
                 return {'input_ids': torch.LongTensor(self.dataset[idx]['input_ids']).squeeze(0),
                         'attention_mask': torch.LongTensor(self.dataset[idx]['attention_mask']).squeeze(0),
@@ -61,8 +59,6 @@ class RE_Dataset(torch.utils.data.Dataset):
             outputs = self.tokenizer(text, add_special_tokens=True,
                                           truncation=True,
                                           return_tensors="pt",
-                                          padding='max_length',
-                                          max_length=256
                                     )
             data.append(outputs)
         return data

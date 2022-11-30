@@ -1,4 +1,4 @@
-program: train_OmegaConf_kf.py
+program: train_OmegaConf.py
 method: grid
 name: 47_cv
 metric:
@@ -8,12 +8,15 @@ parameters:
   model_name:
     values: [klue/roberta-small]
   batch_size: 
-    values: [32]
+    values: [8, 16, 32]  ## xlm하는 사람은 [4, 8, 16]해주고 train에서 gradient_accumlation 주석 풀어서 써주기!!
   epochs:
-    values: [5]
-  lr_type:
-    values: [AdamW]
+    values: [20]
   lr:
-    values: [1e-5]
+    values: [5e-5, 2.24E-4, 1e-5]
   weight_decay:
-    values: [0.01]
+    values: [0.005, 0.01]
+  
+# xlm-roberta-large
+# klue/roberta-large
+# koelectra-base-v3-discriminator
+# bert-multilingual-base(?) largs(?)

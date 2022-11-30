@@ -9,7 +9,7 @@ import wandb
 import argparse
 from load_data import *
 from utils import *
-from train_OmegaConf import *
+from train_single import train_single
 import random
 import pprint
 import wandb
@@ -45,7 +45,7 @@ if cfg.train.train_mode:
     wandb.init(project=cfg.wandb.project_name, entity=cfg.wandb.entity, name=cfg.wandb.exp_name)
     
     print('------------------- train start -------------------------')
-    train(cfg)
+    train_single(cfg)
 
     ## wandb finish
     wandb.finish()

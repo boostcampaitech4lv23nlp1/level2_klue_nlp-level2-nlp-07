@@ -16,17 +16,22 @@ import wandb
 import argparse
 import pprint
 import yaml
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+
+from transformers import DataCollatorWithPadding
 
 def train(cfg):
     ## yaml 파일 경로 설정
-    with open('/opt/ml/git_k/level2_klue_nlp-level2-nlp-07/code/sweep.yaml') as file:
+    with open('./sweep.yaml') as file:
         sweep_config = yaml.load(file, Loader=yaml.FullLoader)
     ## wandb initialize 해주기
     run = wandb.init(config=sweep_config)
     ## wandb run name 지정해주기 batch_size 외에도 더 하고 싶다면 이어 붙이세요. - wandb 시각화에 표시되는 이름
-    wandb.run.name = '{}_{}-{}'.format(wandb.config.name, wandb.config.lr_type, wandb.config.lr)
+    wandb.run.name = '{}_{}-{}-{}'.format(wandb.config.name, wandb.config.batch_size, 
+                                       wandb.config.lr, wandb.config.weight_decay)
     ## 경로 설정용 주소 저장하기
-    wandb_params = '/lr_type-{}_lr-{}'.format(wandb.config.lr_type, wandb.config.lr)
+    wandb_params = '/{}-{}-{}-{}'.format(wandb.config.name, wandb.config.batch_size, 
+                                       wandb.config.lr, wandb.config.weight_decay)
 
     ## Device
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -38,12 +43,12 @@ def train(cfg):
 
     model = AutoModelForSequenceClassification.from_pretrained(wandb.config.model_name, config=model_config)
     
-    if wandb.config.lr_type == 'SGD':
-        optimizer = optim.SGD(model.parameters(), lr = wandb.config.lr, momentum=0.9)
-        scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr = 2.24e-06, max_lr=2.24e-03, step_size_up=2000, step_size_down=2000, mode='triangular')
-    elif wandb.config.lr_type == 'AdamW':
-        optimizer = optim.AdamW(model.parameters(), lr = wandb.config.lr, eps = 1e-8)
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=2, eta_min=1e-7)
+    #if wandb.config.lr_type == 'SGD':
+    #    optimizer = optim.SGD(model.parameters(), lr = wandb.config.lr, momentum=0.9)
+    #    scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr = 2.24e-06, max_lr=2.24e-03, step_size_up=2000, step_size_down=2000, mode='triangular')
+    #elif wandb.config.lr_type == 'AdamW':
+    optimizer = optim.AdamW(model.parameters(), lr = wandb.config.lr, eps = 1e-8)
+    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=2, eta_min=1e-7)
     
     optimizers = (optimizer,scheduler)
 
@@ -62,6 +67,9 @@ def train(cfg):
     # dev data to csv for gold label save
     dev_data['label'] = dev_label
     dev_data.to_csv(cfg.data.dev_data, index=False)
+
+    ## wandb.config로 model_name을 조정함
+    cfg.model.model_name = wandb.config.model_name
 
     ## make dataset for pytorch
     RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer, cfg)
@@ -94,28 +102,38 @@ def train(cfg):
         eval_steps = cfg.train.logging_step,                 # evaluation step.
         load_best_model_at_end = True,
         metric_for_best_model= 'micro_f1_score',
-        fp16=True
+        #gradient_accumulation_steps=2, ## xlm하는 사람 이거 주석 풀고 하시길 바랍니다.
+        fp16=True,
         # wandb
         # report_to="wandb",
         # run_name= wandb.run.name
+        group_by_length=cfg.train.group_by_length
         )
+
+    ## setting data_collator
+    if cfg.train.padding == "max_length":
+        data_collator = DataCollatorWithPadding(tokenizer, padding = "max_length", max_length=cfg.train.max_length)
+    elif cfg.train.padding == "longest":
+        data_collator = DataCollatorWithPadding(tokenizer, padding = True)
+
    ## setting custom trainer with default optimizer & scheduler : AdamW, LambdaLR
     trainer = TrainerwithLosstuning(
         samples_per_class=samples_per_class,
         model=model,                     # the instantiated 🤗 Transformers model to be trained
         args=training_args,              # training arguments, defined above
+        data_collator = data_collator,   # data collator (dynamic padding or smart batching)
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
         compute_metrics=compute_metrics, # define metrics function
-        optimizers = optimizers  
-        # callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
+        optimizers = optimizers,  
+        #callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,
         #                             early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
     )
 
     ## train model
     trainer.train()
     ## save model
-    model.save_pretrained('/opt/ml/code/save_model/' + wandb.config.model_name + wandb_params)
+    model.save_pretrained('/opt/ml/code/save_model/' + wandb.config.model_name.replace('/','-') + wandb_params)
     # wandb.finish()
 
 def seed_everything(seed):
@@ -129,7 +147,7 @@ def seed_everything(seed):
     print('lock_all_seed')
 
 torch.cuda.empty_cache()
-    ## parser
+## parser
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='config')
 args, _ = parser.parse_known_args()
