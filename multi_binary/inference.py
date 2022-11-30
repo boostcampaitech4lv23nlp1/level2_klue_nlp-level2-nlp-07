@@ -55,10 +55,24 @@ def load_test_dataset(dataset_dir,type_pair_id):
     """
     test_dataset = load_data(dataset_dir)
     if type_pair_id != None:
-        subj_type, obj_type = ID_TO_TYPE_PAIR[type_pair_id].split('_')
+        
+        type_list = ID_TO_TYPE_PAIR[type_pair_id].split('_')
+        subj_type = type_list[0]
+        obj_type = type_list[1:]
+
         subj_data = test_dataset[test_dataset['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
-        obj_data = test_dataset[test_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type)]
-        test_dataset = pd.merge(subj_data, obj_data, how='inner')
+        obj_data = test_dataset[test_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type[0])]
+        merge_dataset = pd.merge(subj_data, obj_data, how='inner')
+
+        if len(obj_type) > 1:
+            for i in range(1, len(obj_type)):
+                subj_data = test_dataset[test_dataset['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
+                obj_data = test_dataset[test_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type[i])]
+                output_dataset = pd.merge(subj_data, obj_data, how='inner')
+                merge_dataset = pd.concat([merge_dataset, output_dataset])
+                
+        test_dataset = merge_dataset[merge_dataset['label']!='no_relation']
+        print(len(test_dataset))
     test_label = list(map(int,test_dataset['label'].values))
 
     return test_dataset['id'], test_dataset, test_label

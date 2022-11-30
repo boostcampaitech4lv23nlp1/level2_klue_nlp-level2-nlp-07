@@ -34,11 +34,23 @@ def main(args):
 
     ########### load dataset   ###########
     train_dataset = load_data(args.train_data_dir)
-    subj_type, obj_type = ID_TO_TYPE_PAIR[args.type_pair_id].split('_')
+    type_list = ID_TO_TYPE_PAIR[args.type_pair_id].split('_')
+    subj_type = type_list[0]
+    obj_type = type_list[1:]
+
     subj_data = train_dataset[train_dataset['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
-    obj_data = train_dataset[train_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type)]
+    obj_data = train_dataset[train_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type[0])]
     merge_dataset = pd.merge(subj_data, obj_data, how='inner')
+
+    if len(obj_type) > 1:
+        for i in range(1, len(obj_type)):
+            subj_data = train_dataset[train_dataset['subject_entity'].apply(lambda x: eval(x)['type']==subj_type)]
+            obj_data = train_dataset[train_dataset['object_entity'].apply(lambda x: eval(x)['type']==obj_type[i])]
+            output_dataset = pd.merge(subj_data, obj_data, how='inner')
+            merge_dataset = pd.concat([merge_dataset, output_dataset])
+            
     train_dataset = merge_dataset[merge_dataset['label']!='no_relation']
+    print(len(train_dataset))
     
     train_label = label_to_num(train_dataset['label'].values,args.type_pair_id)
     
@@ -89,7 +101,7 @@ def main(args):
 
     ## load test datset
     test_dataset_dir = args.test_data_dir
-    test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir,args.type_pair_id)
+    test_id, test_dataset, test_label = load_test_dataset(test_dataset_dir, args.type_pair_id)
 
     Re_test_dataset = RE_Dataset(test_dataset ,test_label, tokenizer)
 
