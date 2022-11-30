@@ -1,4 +1,4 @@
-program: train_OmegaConf.py
+program: train_OmegaConf_cv.py
 method: grid
 name: 43_scheduler
 metric:
