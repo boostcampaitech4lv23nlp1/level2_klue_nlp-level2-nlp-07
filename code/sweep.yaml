@@ -1,17 +1,19 @@
 program: train_OmegaConf.py
 method: grid
-name: 99_klue-sweep-test2
+name: 43_scheduler
 metric:
   goal: maximize
   name: eval/micro_f1_score
 parameters:
   model_name:
-    values: [klue/roberta-small]
+    values: [klue/roberta-large]
   batch_size: 
-    values: [32, 64]
+    values: [32]
   epochs:
     values: [10]
+  lr_type:
+    values: [SGD, AdamW]
   lr:
-    values: [5e-5]
+    values: [2.24E-04, 1e-5]
   weight_decay:
     values: [0.01]
