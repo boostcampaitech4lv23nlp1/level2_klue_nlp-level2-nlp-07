@@ -65,6 +65,9 @@ def train(cfg):
     dev_data['label'] = dev_label
     dev_data.to_csv(cfg.data.dev_data, index=False)
 
+    ## wandb.config로 model_name을 조정함
+    cfg.model.model_name = wandb.config.model_name
+
     ## make dataset for pytorch
     RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer, cfg)
     RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer, cfg)

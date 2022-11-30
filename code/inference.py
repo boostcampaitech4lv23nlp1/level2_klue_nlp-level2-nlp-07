@@ -10,22 +10,28 @@ import numpy as np
 from tqdm import tqdm
 import wandb
 
-def inference(model, tokenized_sent, device, tokenizer):
+def inference(model, tokenized_sent, device, tokenizer, cfg):
     """
     test dataset을 DataLoader로 만들어 준 후,
     batch_size로 나눠 model이 예측 합니다.
     """
-    dataloader = DataLoader(tokenized_sent, batch_size=32, shuffle=False, collate_fn=DataCollatorWithPadding(tokenizer)) # batch_size= 16
+    dataloader = DataLoader(tokenized_sent, batch_size=cfg.train.batch_size, shuffle=False, collate_fn=DataCollatorWithPadding(tokenizer)) # batch_size= 16
     model.eval()
     output_pred = []
     output_prob = []
     for i, data in enumerate(tqdm(dataloader)):
         with torch.no_grad():
-            outputs = model(
-              input_ids=data['input_ids'].to(device),
-              attention_mask=data['attention_mask'].to(device),
-              token_type_ids=data['token_type_ids'].to(device)
-              )
+            if cfg.model.model_name == 'xlm-roberta-base' or cfg.model.model_name == 'xlm-roberta-large':
+                outputs = model(
+                input_ids=data['input_ids'].to(device),
+                attention_mask=data['attention_mask'].to(device),
+                )
+            else:
+                outputs = model(
+                input_ids=data['input_ids'].to(device),
+                attention_mask=data['attention_mask'].to(device),
+                token_type_ids=data['token_type_ids'].to(device)
+                )
             logits = outputs[0]
             prob = F.softmax(logits, dim=-1).detach().cpu().numpy()
             logits = logits.detach().cpu().numpy()
@@ -134,11 +140,11 @@ def test(cfg):
     Re_dev_dataset = RE_Dataset(dev_dataset ,dev_label, tokenizer, cfg)
 
     ## predict answer ## 절대 바꾸지 말 것 ##
-    pred_answer, output_prob = inference(model, Re_test_dataset, device, tokenizer) # model에서 class 추론
+    pred_answer, output_prob = inference(model, Re_test_dataset, device, tokenizer, cfg) # model에서 class 추론
     pred_answer = num_to_label(cfg, pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
 
     ## dev predict & gold label
-    dev_pred_answer, dev_output_prob = inference(model, Re_dev_dataset, device, tokenizer) # model에서 class 추론
+    dev_pred_answer, dev_output_prob = inference(model, Re_dev_dataset, device, tokenizer, cfg) # model에서 class 추론
     dev_pred_answer = num_to_label(cfg, dev_pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
     gold_answer = num_to_label(cfg, dev_label)
 
