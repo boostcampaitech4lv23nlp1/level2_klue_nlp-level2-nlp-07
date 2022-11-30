@@ -1,0 +1,11 @@
+program: train_OmegaConf.py
+method: grid
+name: sweep
+metric:
+  goal: maximize
+  name: val_acc
+parameters:
+  batch_size: 
+    values: [16,32]
+  epochs:
+    values: [1, 5]

@@ -7,5 +7,3 @@ python klue_binary.py \
 --wandb_name test_BaseLine-RECENT-binary_data \
 --checkpoint_dir /opt/ml/code/results/recent/depot-recent-binary_data \
 --save_model_dir /opt/ml/code/save_model/recent/depot-recent-binary_data   \
-
-''

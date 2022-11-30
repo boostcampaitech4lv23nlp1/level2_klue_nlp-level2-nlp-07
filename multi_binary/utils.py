@@ -151,7 +151,6 @@ def bi_compute_metrics(pred,):
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
     probs = pred.predictions
-
     # calculate accuracy using sklearn's function
     f1 = bi_klue_re_micro_f1(preds, labels)
     auprc = bi_klue_re_auprc(probs, labels)
@@ -163,7 +162,22 @@ def bi_compute_metrics(pred,):
       'accuracy': acc,
     }
 
+def multi_compute_metrics(pred, ):
+    """ validation을 위한 metrics function """
+    labels = pred.label_ids
+    preds = pred.predictions.argmax(-1)
+    probs = pred.predictions
 
+    # calculate accuracy using sklearn's function
+    f1 = multi_klue_re_micro_f1(preds, labels, args.type_pair_id)
+    auprc = multi_klue_re_auprc(probs, labels, args.type_pair_id)
+    acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
+
+    return {
+      'micro_f1_score': f1,
+      'auprc' : auprc,
+      'accuracy': acc,
+    }
 
 def label_to_num(label, type_pair_id):
     num_label = []

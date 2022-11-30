@@ -11,7 +11,11 @@ from load_data import *
 from utils import *
 from train_OmegaConf import *
 import random
+import pprint
+import wandb
+import os 
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 # set fixed random seed
 def seed_everything(seed):
     torch.manual_seed(seed)
@@ -23,7 +27,16 @@ def seed_everything(seed):
     random.seed(seed)
     print('lock_all_seed')
 
-## Reset the Memory
+def wandb_function(cfg):
+    if cfg.train.train_mode:
+        print('------------------- train start -------------------------')
+        train(cfg)
+    if cfg.test.test_mode:
+        print('--------------------- test start ----------------------')
+        test(cfg)
+    print('----------------- Finish! ---------------------')
+
+    ## Reset the Memory
 torch.cuda.empty_cache()
 
 ## parser
@@ -31,25 +44,33 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='config')
 args, _ = parser.parse_known_args()
 cfg = OmegaConf.load(f'./config/{args.config}.yaml')
-
+# swp = OmegaConf.load(f'./config/sweep.yaml')
 ## set seed
 seed_everything(cfg.train.seed)
 
-## train
-if cfg.train.train_mode:
-    ## wandb login
-    wandb.login()
-    wandb.init(project=cfg.wandb.project_name, entity=cfg.wandb.entity, name=cfg.wandb.exp_name)
-    
-    print('------------------- train start -------------------------')
-    train(cfg)
+## sweep configuration
+sweep_config = {
+    'name' : 'klue-sweep',
+    'method' : 'grid',
+    'parameters' :{
+    'batch_size': {
+        'values':[32,64]
+    },
+}}
 
+## wandb login
+wandb.login()
+sweep_id = wandb.sweep(
+    sweep=  sweep_config,
+    project = cfg.wandb.project_name,
+    entity = cfg.wandb.entity
+)
+pprint.pprint(sweep_config)
+    # wandb.init(project=cfg.wandb.project_name, entity=cfg.wandb.entity, name=cfg.wandb.exp_name)
+
+wandb.agent(sweep_id, function=wandb_function(cfg))
+
+# wandb.agent(sweep_id, function=train(cfg))
+# wandb.agent(sweep_id, function=test(cfg))
     ## wandb finish
-    wandb.finish()
-
-## inference
-if cfg.test.test_mode:
-    print('--------------------- test start ----------------------')
-    test(cfg)
-    
-print('----------------- Finish! ---------------------')
+    # wandb.finish()
