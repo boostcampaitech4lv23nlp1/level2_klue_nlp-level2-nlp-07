@@ -1,6 +1,6 @@
-program: train_OmegaConf.py
+program: train_OmegaConf_cv.py
 method: grid
-name: 99_klue-sweep-test2
+name: 43_scheduler
 metric:
   goal: maximize
   name: eval/micro_f1_score
@@ -11,7 +11,9 @@ parameters:
     values: [32, 64]
   epochs:
     values: [10]
+  lr_type:
+    values: [SGD, AdamW]
   lr:
-    values: [5e-5]
+    values: [2.24E-04, 1e-5]
   weight_decay:
     values: [0.01]
