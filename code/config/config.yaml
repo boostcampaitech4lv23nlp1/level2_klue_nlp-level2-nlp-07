@@ -1,28 +1,28 @@
 data:
-  train_data: /opt/ml/dataset/train/train.csv
+  train_data: /opt/ml/dataset/train/train_final.csv
   dev_data: /opt/ml/dataset/train/dev_data.csv # 어차피 output에서 따로 저장되니 덮어써도 됨
   test_data: /opt/ml/dataset/test/test_data.csv
   shuffle: True
 
 model:
   model_name: klue/roberta-small
-  saved_model: /opt/ml/code/save_model/46_klue_roberta_small_TEM_punct_dynamic_padding_sweep ## should be changed at every experiment
+  saved_model: /opt/ml/code/save_model/test_sweep ## should be changed at every experiment
 
 train:
   train_mode: True
   seed: 42
   logging_step: 1000
   checkpoint: /opt/ml/code/results/klue-roberta-small
-  loss: "cross_entropy" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
+  loss: "focal_loss" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
   beta: 0.99
   gamma: 2
   marker_mode: "TEM_punct" ## "EMask", "EM", "TEM", "TEM_punct"
-  entity_embedding: False
+  entity_embedding: False ## RBERT에만 쓰세요~
   patience: 10
   threshold: 0.1
   group_by_length: True # True : smart_batching, False : dynamic_padding or fixed_padding
   padding: longest # longest : dynamic_padding, max_length: fixed_padding
-  max_length: 256 # single experiment를 위한 hyperparameters
+  max_length: 256 
   batch_size: 32 # single experiment를 위한 hyperparameters
   epoch: 10 # single experiment를 위한 hyperparameters
   lr: 5e-5 # single experiment를 위한 hyperparameters
