@@ -5,16 +5,13 @@ import pickle as pickle
 from torch import nn
 import torch
 import argparse
+from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 
 from transformers import Trainer
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('--type_pair_id', default=None, type=int)
-# args = parser.parse_args()
-
 ID_TO_TYPE_PAIR = {
-    0: 'ORG_PER', 1: 'ORG_ORG', 2: 'ORG_DAT', 3: 'ORG_LOC', 4: 'ORG_POH', 5: 'ORG_NOH',
-    6: 'PER_PER', 7: 'PER_ORG', 8: 'PER_DAT', 9: 'PER_LOC', 10: 'PER_POH', 11: 'PER_NOH'
+    0: 'ORG_PER', 1: 'ORG_ORG_POH', 2: 'ORG_DAT', 3: 'ORG_LOC', 4: 'ORG_NOH',
+    5: 'PER_PER_POH_ORG', 6: 'PER_DAT_NOH', 7: 'PER_LOC'
 }
 
 LABEL_TO_ID = {
@@ -24,7 +21,7 @@ LABEL_TO_ID = {
         'org:founded_by': 1,
         'org:alternate_names': 2,       
     },
-    1: # ORG_ORG
+    1: # ORG_ORG_POH
     {
         'org:member_of': 0,
         'org:alternate_names': 1,
@@ -33,6 +30,7 @@ LABEL_TO_ID = {
         'org:political/religious_affiliation': 4,
         'org:product': 5,
         'org:top_members/employees' : 6,
+        'org:founded_by':7,
     },
     2: # ORG_DAT
     {
@@ -50,24 +48,13 @@ LABEL_TO_ID = {
         'org:top_members/employees': 5,
         'org:political/religious_affiliation': 6,
     },
-    4: # ORG_POH
-    {
-        'org:member_of': 0,
-        'org:product': 1,
-        'org:alternate_names': 2,
-        'org:top_members/employees': 3,
-        'org:place_of_headquarters': 4,
-        'org:political/religious_affiliation': 5,
-        'org:members': 6,
-        'org:founded_by': 7,
-    },
-    5: # ORG_NOH
+    4: # ORG_NOH
     {
         'org:number_of_employees/members': 0,
         'org:member_of' : 1,
         'org:alternate_names':2,
     },
-    6: # PER_PER
+    5: # PER_PER_POH_ORG
     {
         'per:alternate_names': 0,
         'per:spouse': 1,
@@ -80,30 +67,19 @@ LABEL_TO_ID = {
         'per:origin': 8,  
         'per:title': 9,
         'per:product':10,
+        'per:religion':11,
+        'per:schools_attended':12,
     },
-    7: # PER_ORG
-    {
-        'per:employee_of': 0,
-        'per:origin': 1,
-        'per:title':2,
-        'per:schools_attended': 3,
-        'per:religion': 4,
-        'per:alternate_names': 5, 
-        'per:place_of_residence': 6,
-        'per:product': 7,
-        'per:colleagues': 8,
-    },
-    8: # PER_DAT
+    6: # PER_DAT_NOH
     {
         'per:date_of_birth': 0,
         'per:date_of_death': 1,
-        'per:origin': 2,
+        'per:origin':2,
         'per:employee_of': 3,
-        'per:parents': 4,
-        'per:place_of_residence': 5,
-        'per:title': 6,
+        'per:title': 4,
+        'per:children': 5, 
     },
-    9: # PER_LOC
+    7: # PER_LOC
     {
         'per:origin': 0,
         'per:place_of_residence': 1,
@@ -111,29 +87,6 @@ LABEL_TO_ID = {
         'per:place_of_birth': 3,
         'per:title': 4,
         'per:place_of_death': 5,
-    },
-    10: # PER_POH
-    {
-        'per:title': 0,
-        'per:employee_of': 1,
-        'per:product': 2,
-        'per:alternate_names': 3,
-        'per:parents': 4,
-        'per:origin': 5,
-        'per:spouse': 6,
-        'per:siblings': 7,
-        'per:children': 8,
-        'per:religion': 9,
-        'per:colleagues': 10,
-        'per:other_family': 11,
-        'per:place_of_residence': 12,
-    },
-    11: # PER_NOH
-    {
-        'per:title': 0,
-        'per:employee_of': 1,
-        'per:date_of_birth': 2,
-        'per:date_of_death': 3,
     },}
 
 def bi_klue_re_micro_f1(preds, labels):
@@ -252,3 +205,29 @@ class TrainerwithFocalLoss(Trainer):
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
+class binary_TrainerwithFocalLoss(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.get("labels")
+        #print(labels)
+        # forward pass
+        outputs = model(**inputs)
+        #print(outputs)
+        logits = outputs.get("logits")
+        # compute custom loss (suppose one has 3 labels with different weights)
+        loss_fct = nn.BCEWithLogitsLoss()
+        #print(logits.shape)
+        labels_1 = labels.eq(0).eq(0).float().half()
+        lab = torch.sigmoid(logits)
+        #print(lab)
+        #print(lab.shape)
+        print('-----------')
+        #print(logits.shape, labels_1.shape)
+        print(logits[0])
+        print(logits[0].shape)
+        #print(labels_1.shape, logits.shape, logits.shape, labels_1.shape, logits.view(-1), logits.view(-1).shape, labels_1.view(-1).shape)
+        #layer_1 = nn.Linear(30, 1)
+        #print(logits.view(-1), layer_1(logits).view(-1), labels_1.view(-1))
+        loss = loss_fct(logits.view(-1), labels_1.view(-1))
+        
+        #probs = torch.sigmoid(logits).squeeze(-1)
+        return (loss, outputs) if return_outputs else loss

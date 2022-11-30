@@ -69,7 +69,7 @@ def main(args):
         )
     
     # trainer = Trainer(
-    trainer = TrainerwithFocalLoss(
+    trainer = binary_TrainerwithFocalLoss(
         model=model,                     # the instantiated 🤗 Transformers model to be trained
         args=training_args,              # training arguments, defined above
         train_dataset=RE_train_dataset,  # training dataset
