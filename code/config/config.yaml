@@ -11,7 +11,7 @@ model:
 train:
   train_mode: True
   seed: 42
-  logging_step: 100
+  logging_step: 1000
   checkpoint: /opt/ml/code/results/roberta-large
   loss: "cross_entropy" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
   beta: 0.99

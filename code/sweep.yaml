@@ -1,19 +1,19 @@
-program: train_OmegaConf_cv.py
+program: train_OmegaConf_kf.py
 method: grid
-name: 43_scheduler
+name: 47_cv
 metric:
   goal: maximize
   name: eval/micro_f1_score
 parameters:
   model_name:
-    values: [klue/roberta-large]
+    values: [klue/roberta-small]
   batch_size: 
     values: [32]
   epochs:
-    values: [10]
+    values: [5]
   lr_type:
-    values: [SGD, AdamW]
+    values: [AdamW]
   lr:
-    values: [2.24E-04, 1e-5]
+    values: [1e-5]
   weight_decay:
     values: [0.01]

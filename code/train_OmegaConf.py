@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments, RobertaConfig, RobertaTokenizer, RobertaForSequenceClassification, BertTokenizer,EarlyStoppingCallback
 import torch.optim as optim
+from torch.optim.lr_scheduler import _LRScheduler,CosineAnnealingWarmRestarts
 
 from omegaconf import OmegaConf
 from load_data import *
@@ -80,7 +81,7 @@ def train(cfg):
     ## train arguments
     training_args = TrainingArguments(
         output_dir=cfg.train.checkpoint + wandb_params,
-        save_total_limit=10,
+        save_total_limit=3,
         save_steps=cfg.train.logging_step,
         num_train_epochs=wandb.config.epochs,
         learning_rate= wandb.config.lr,                         # default : 5e-5
@@ -88,7 +89,7 @@ def train(cfg):
         per_device_eval_batch_size=wandb.config.batch_size,     # default : 32
         warmup_steps=cfg.train.logging_step,               
         weight_decay=wandb.config.weight_decay,               
-        logging_steps=100,               
+        logging_steps=1000,               
         evaluation_strategy='steps',     
         eval_steps = cfg.train.logging_step,                 # evaluation step.
         load_best_model_at_end = True,
