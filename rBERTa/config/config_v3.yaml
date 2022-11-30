@@ -1,0 +1,42 @@
+data:
+    train_data: /opt/ml/dataset/train/train.csv
+    test_data: /opt/ml/dataset/test/test_data.csv
+    shuffle: True
+    
+model:
+    plm : BERT
+    model_name: klue/roberta-large
+    saved_model: /opt/ml/code/best_model/rbert/rbert_IRE.pt
+    # saved_model : /opt/ml/code/best_model/electra/electra_final_test.pt
+    
+train:
+    train_mode: False
+    seed: 42
+    batch_size: 16
+    epoch: 20
+    lr: 1e-5
+    second_lr : 5e-5
+    num_workers : 4
+    logging_step: 100
+    patience : 2
+    warmup_steps : 1000
+    weight_decay: 0.01
+    checkpoint : /opt/ml/code/results
+    marker_mode : TEM_punct
+    entity_embedding : True
+    T_0 : 50
+    T_mult : 2
+    eta_min : 1e-7
+    
+
+test:
+    test_mode: True
+    num_to_label: /opt/ml/code/dict_num_to_label.pkl
+    output_csv: /opt/ml/code/prediction/second_test_RBERTa_CoRE.csv
+
+wandb:
+    project_name: klue-roberta-large
+    entity: klue-bora
+    exp_name: 29 second_test for RBERTa
+
+

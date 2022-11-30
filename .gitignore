@@ -1,7 +1,7 @@
 ._*
 dict_label_to_num.pkl
 dict_num_to_label.pkl
-train.py
+
 Entity_embedding.ipynb
 EDA.ipynb
 wandb/
