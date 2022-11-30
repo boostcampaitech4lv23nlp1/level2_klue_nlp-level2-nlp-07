@@ -5,18 +5,14 @@ data:
   shuffle: True
 
 model:
-  model_name: klue/roberta-small
-  saved_model: /opt/ml/code/save_model/klue_roberta-small ## should be changed at every experiment
+  model_name: klue/roberta-large
+  saved_model: /opt/ml/code/save_model/klue_roberta-large ## should be changed at every experiment
 
 train:
   train_mode: True
   seed: 42
-  batch_size: 32
-  epoch: 10
-  lr: 5e-5
-  logging_step: 1000
-  weight_decay: 0.01
-  checkpoint: /opt/ml/code/results/roberta-small
+  logging_step: 100
+  checkpoint: /opt/ml/code/results/roberta-large
   loss: "cross_entropy" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
   beta: 0.99
   gamma: 2
@@ -29,10 +25,10 @@ test:
   test_mode: True
   load_cp: /opt/ml/code/results/roberta-small/checkpoint-4000 # 불러올 checkpoint 주소!
   num_to_label: /opt/ml/code/dict_num_to_label.pkl
-  dev_csv: /opt/ml/code/prediction/dev/99_klue-roberta-small-test # gold라벨 devset 저장 주소
-  output_csv: /opt/ml/code/prediction/test/99_klue-roberta-small-test ## should be changed at every experiment
+  dev_csv: /opt/ml/code/prediction/dev/43_klue-roberta-large-scheduler # gold라벨 devset 저장 주소
+  output_csv: /opt/ml/code/prediction/test/43_klue-roberta-large-scheduler ## should be changed at every experiment
 
 wandb:
-  project_name: klue-roberta-small # 모델 명으로! klue-roberta-base와 같이 -로 나눌 것!
+  project_name: klue-roberta-large # 모델 명으로! klue-roberta-base와 같이 -로 나눌 것!
   entity: klue-bora
-  exp_name: 99_wandb_test # notion 실험 관리 실험 번호 + 짧은 설명 ex)19_noise-aug_all-random-only
+  exp_name: 43_wandb_test # notion 실험 관리 실험 번호 + 짧은 설명 ex)19_noise-aug_all-random-only
