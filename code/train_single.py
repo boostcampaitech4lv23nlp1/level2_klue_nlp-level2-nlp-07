@@ -79,7 +79,6 @@ def train_single(cfg):
         data_collator = DataCollatorWithPadding(tokenizer, padding = "max_length", max_length=cfg.train.max_length)
     elif cfg.train.padding == "longest":
         data_collator = DataCollatorWithPadding(tokenizer, padding = True)
-    print(data_collator)
     ## setting custom trainer with default optimizer & scheduler : AdamW, LambdaLR
     trainer = TrainerwithLosstuning(
         samples_per_class=samples_per_class,
