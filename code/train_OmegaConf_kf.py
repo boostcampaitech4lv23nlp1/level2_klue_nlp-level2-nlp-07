@@ -132,7 +132,7 @@ def train(cfg):
         trainer.train()
         ## save model
         model.save_pretrained('/opt/ml/code/save_model/' + k_run.config.model_name + wandb_params)
-        # wandb.finish()
+    wandb.finish()
 
 def seed_everything(seed):
     torch.manual_seed(seed)
