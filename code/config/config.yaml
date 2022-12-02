@@ -12,7 +12,7 @@ train:
   train_mode: False
   seed: 42
   logging_step: 1000
-  checkpoint: /opt/ml/code/results/ko-electra
+  checkpoint: /opt/ml/code/results/sweep-klue-roberta-large-focal-loss
   loss: "focal_loss" ## "cross_entropy", "class_balanced_cross_entropy", "focal_loss"
   beta: 0.99
   gamma: 2

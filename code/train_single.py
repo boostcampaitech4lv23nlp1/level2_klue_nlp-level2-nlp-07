@@ -8,6 +8,8 @@ from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassifi
 from omegaconf import OmegaConf
 from load_data import *
 from utils import *
+import torch.optim as optim
+from torch.optim.lr_scheduler import _LRScheduler,CosineAnnealingWarmRestarts
 import random
 from collections import Counter
 from transformers import DataCollatorWithPadding
@@ -30,23 +32,28 @@ def train_single(cfg):
     train_label = label_to_num(train_dataset['label'].values)
 
     # train_dev split, stratify 옵션으로 데이터 불균형 해결!
-    train_data, dev_data, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2, random_state=cfg.train.seed, stratify=train_label)
-    train_data.reset_index(drop=True, inplace = True)
-    dev_data.reset_index(drop=True, inplace = True)
+    #train_data, dev_data, train_label, dev_label = train_test_split(train_dataset, train_label, test_size=0.2, stratify=train_label)
+    #train_data.reset_index(drop=True, inplace = True)
+    #dev_data.reset_index(drop=True, inplace = True)
 
     # dev data to csv for gold label save
-    dev_data['label'] = dev_label
-    dev_data.to_csv(cfg.data.dev_data, index=False)
+    #dev_data['label'] = dev_label
+    #dev_data.to_csv(cfg.data.dev_data, index=False)
+    
+    optimizer = optim.AdamW(model.parameters(), lr = cfg.train.lr, eps = 1e-8)
+    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=2, eta_min=1e-7)
+        
+    optimizers = (optimizer,scheduler)
 
     ## make dataset for pytorch
-    RE_train_dataset = RE_Dataset(train_data, train_label, tokenizer, cfg)
-    RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer, cfg)
+    RE_train_dataset = RE_Dataset(train_dataset, train_label, tokenizer, cfg)
+    #RE_dev_dataset = RE_Dataset(dev_data, dev_label, tokenizer, cfg)
     model.resize_token_embeddings(len(RE_train_dataset.tokenizer))
 
     if cfg.train.entity_embedding:
         print('='*10, "Start", '='*10)
         insert_entity_idx_tokenized_dataset(tokenizer, RE_train_dataset.dataset, cfg)
-        insert_entity_idx_tokenized_dataset(tokenizer, RE_dev_dataset.dataset, cfg)
+        #insert_entity_idx_tokenized_dataset(tokenizer, RE_dev_dataset.dataset, cfg)
         print('='*10, "END", '='*10)
 
     ## make samples_per_class (which is needed for TrainerwithLosstuning)
@@ -86,10 +93,11 @@ def train_single(cfg):
         args=training_args,              # training arguments, defined above
         data_collator = data_collator,   # data collator (dynamic padding or smart batching)
         train_dataset=RE_train_dataset,  # training dataset
-        eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
+        #eval_dataset=RE_dev_dataset,     # evaluation dataset use dev
         compute_metrics=compute_metrics,  # define metrics function
-        callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
-                                    early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
+        optimizers = optimizers,
+        #callbacks = [EarlyStoppingEval(early_stopping_patience=cfg.train.patience,\
+        #                            early_stopping_threshold = cfg.train.threshold)]# total_step / eval_step : max_patience
     )
 
     ## train model
